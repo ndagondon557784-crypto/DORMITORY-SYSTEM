@@ -10,9 +10,22 @@ class Room extends Model
     use HasFactory;
 
     protected $fillable = [
-        'room_number', 'capacity', 'type', 'gender',
-        'floor', 'building', 'price_per_month', 'description', 'status',
+        'dormitory_id', 'room_number', 'room_type', 'capacity',
+        'current_occupancy', 'monthly_rate', 'floor_number',
+        'status', 'amenities', 'description',
     ];
+
+    protected $casts = [
+        'monthly_rate' => 'decimal:2',
+        'capacity' => 'integer',
+        'current_occupancy' => 'integer',
+        'floor_number' => 'integer',
+    ];
+
+    public function dormitory()
+    {
+        return $this->belongsTo(Dormitory::class);
+    }
 
     public function allocations()
     {
@@ -24,30 +37,47 @@ class Room extends Model
         return $this->hasMany(Allocation::class)->where('status', 'active');
     }
 
-    public function applications()
+    public function currentTenants()
     {
-        return $this->hasMany(Application::class);
+        return $this->hasManyThrough(Student::class, Allocation::class, 'room_id', 'id', 'id', 'student_id')
+            ->where('allocations.status', 'active');
     }
 
-    public function getOccupancyAttribute(): int
+    public function getIsAvailableAttribute(): bool
     {
-        return $this->activeAllocations()->count();
+        return in_array($this->status, ['available', 'occupied']) && $this->current_occupancy < $this->capacity;
     }
 
     public function getAvailableSlotsAttribute(): int
     {
-        return max(0, $this->capacity - $this->occupancy);
+        return max(0, $this->capacity - $this->current_occupancy);
     }
 
-    public function getIsFullAttribute(): bool
+    public function getStatusBadgeAttribute(): string
     {
-        return $this->available_slots === 0;
+        return match($this->status) {
+            'available' => 'badge-success',
+            'occupied' => 'badge-warning',
+            'full' => 'badge-danger',
+            'maintenance' => 'badge-secondary',
+            'reserved' => 'badge-info',
+            default => 'badge-secondary',
+        };
     }
 
-    public function getOccupancyPercentAttribute(): int
+    public function updateOccupancy(): void
     {
-        return $this->capacity > 0
-            ? (int) round(($this->occupancy / $this->capacity) * 100)
-            : 0;
+        $count = $this->allocations()->where('status', 'active')->count();
+        $this->current_occupancy = $count;
+
+        if ($count === 0) {
+            $this->status = 'available';
+        } elseif ($count >= $this->capacity) {
+            $this->status = 'full';
+        } else {
+            $this->status = 'occupied';
+        }
+
+        $this->save();
     }
 }

@@ -10,57 +10,54 @@ class User extends Authenticatable
 {
     use HasFactory, Notifiable;
 
-    // Role constants — use these everywhere, never hardcode strings
-    const ROLE_ADMIN   = 'admin';
-    const ROLE_STUDENT = 'student';
-
-    /*
-     * CRITICAL: 'role' MUST be in $fillable.
-     * If it is missing, User::create(['role' => 'admin']) will silently
-     * be ignored due to mass-assignment protection, and every user
-     * will have role = null, breaking isAdmin() and isStudent().
-     */
     protected $fillable = [
-        'name',
-        'email',
-        'password',
-        'role',      // <-- DO NOT REMOVE THIS
+        'name', 'email', 'password', 'role', 'avatar', 'phone', 'is_active', 'last_login_at',
     ];
 
-    protected $hidden = [
-        'password',
-        'remember_token',
+    protected $hidden = ['password', 'remember_token'];
+
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+        'last_login_at' => 'datetime',
+        'password' => 'hashed',
+        'is_active' => 'boolean',
     ];
-
-    protected function casts(): array
-    {
-        return [
-            'email_verified_at' => 'datetime',
-            'password'          => 'hashed',
-        ];
-    }
-
-    // ── Role helpers ──────────────────────────────────────────────
 
     public function isAdmin(): bool
     {
-        return $this->role === self::ROLE_ADMIN;
+        return $this->role === 'admin';
     }
 
-    public function isStudent(): bool
+    public function isStaff(): bool
     {
-        return $this->role === self::ROLE_STUDENT;
+        return $this->role === 'staff';
     }
 
-    // ── Relationships ─────────────────────────────────────────────
-
-    public function student(): \Illuminate\Database\Eloquent\Relations\HasOne
+    public function allocations()
     {
-        return $this->hasOne(Student::class);
+        return $this->hasMany(Allocation::class, 'allocated_by');
     }
 
-    public function activityLogs(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function payments()
+    {
+        return $this->hasMany(Payment::class, 'received_by');
+    }
+
+    public function activityLogs()
     {
         return $this->hasMany(ActivityLog::class);
+    }
+
+    public function notifications()
+    {
+        return $this->hasMany(Notification::class);
+    }
+
+    public function getAvatarUrlAttribute(): string
+    {
+        if ($this->avatar) {
+            return asset('storage/' . $this->avatar);
+        }
+        return 'https://ui-avatars.com/api/?name=' . urlencode($this->name) . '&background=6366f1&color=fff&size=100';
     }
 }
