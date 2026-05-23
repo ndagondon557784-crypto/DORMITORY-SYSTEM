@@ -1,98 +1,120 @@
 @extends('layouts.app')
-@section('title','Rooms')
-@section('content')
+@section('title', 'Rooms')
 
-<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-    <div><h1 class="text-2xl font-extrabold text-gray-800">Rooms</h1><p class="text-gray-400 text-sm">Manage all dormitory rooms</p></div>
-    <a href="{{ route('admin.rooms.create') }}" class="inline-flex items-center gap-2 px-5 py-2.5 bg-[#A50044] text-white font-bold rounded-xl hover:bg-[#7A003C] transition text-sm shadow">+ Add Room</a>
+@section('content')
+<div class="page-header">
+    <div>
+        <div class="breadcrumb">
+            <a href="{{ route('admin.dashboard') }}">Home</a>
+            <i data-feather="chevron-right" class="w-3 h-3"></i>
+            <span>Rooms</span>
+        </div>
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Rooms</h1>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage all dormitory rooms</p>
+    </div>
+    <a href="{{ route('admin.rooms.create') }}" class="btn-primary">
+        <i data-feather="plus" class="w-4 h-4"></i> Add Room
+    </a>
 </div>
 
-<div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-6">
-    <form method="GET" class="flex flex-wrap gap-3">
-        <input type="text" name="search" value="{{ request('search') }}" placeholder="Search room, building..."
-               class="flex-1 min-w-44 px-4 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#004D98] bg-gray-50">
-        <select name="status" class="px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#004D98] bg-gray-50">
+<!-- Filters -->
+<div class="card p-4 mb-6">
+    <form method="GET" class="flex flex-col sm:flex-row gap-3">
+        <div class="flex-1 relative">
+            <i data-feather="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"></i>
+            <input type="text" name="search" value="{{ request('search') }}" placeholder="Search room number or dormitory..." class="form-input pl-9">
+        </div>
+        <select name="dormitory_id" class="form-input w-full sm:w-48">
+            <option value="">All Dormitories</option>
+            @foreach($dormitories as $dorm)
+            <option value="{{ $dorm->id }}" {{ request('dormitory_id') == $dorm->id ? 'selected' : '' }}>{{ $dorm->name }}</option>
+            @endforeach
+        </select>
+        <select name="status" class="form-input w-full sm:w-40">
             <option value="">All Status</option>
-            <option value="available"   {{ request('status')=='available'?'selected':'' }}>Available</option>
-            <option value="full"        {{ request('status')=='full'?'selected':'' }}>Full</option>
-            <option value="maintenance" {{ request('status')=='maintenance'?'selected':'' }}>Maintenance</option>
+            @foreach(['available','occupied','full','maintenance','reserved'] as $s)
+            <option value="{{ $s }}" {{ request('status') == $s ? 'selected' : '' }}>{{ ucfirst($s) }}</option>
+            @endforeach
         </select>
-        <select name="type" class="px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#004D98] bg-gray-50">
+        <select name="room_type" class="form-input w-full sm:w-36">
             <option value="">All Types</option>
-            <option value="single"    {{ request('type')=='single'?'selected':'' }}>Single</option>
-            <option value="double"    {{ request('type')=='double'?'selected':'' }}>Double</option>
-            <option value="triple"    {{ request('type')=='triple'?'selected':'' }}>Triple</option>
-            <option value="dormitory" {{ request('type')=='dormitory'?'selected':'' }}>Dormitory</option>
+            @foreach(['single','double','triple','quad','suite'] as $t)
+            <option value="{{ $t }}" {{ request('room_type') == $t ? 'selected' : '' }}>{{ ucfirst($t) }}</option>
+            @endforeach
         </select>
-        <select name="gender" class="px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#004D98] bg-gray-50">
-            <option value="">All Genders</option>
-            <option value="male"   {{ request('gender')=='male'?'selected':'' }}>Male</option>
-            <option value="female" {{ request('gender')=='female'?'selected':'' }}>Female</option>
-            <option value="mixed"  {{ request('gender')=='mixed'?'selected':'' }}>Mixed</option>
-        </select>
-        <button type="submit" class="px-5 py-2 bg-[#004D98] text-white rounded-xl text-sm font-bold hover:bg-[#003a73] transition">Filter</button>
-        <a href="{{ route('admin.rooms.index') }}" class="px-5 py-2 border border-gray-200 text-gray-500 rounded-xl text-sm hover:bg-gray-50 transition">Reset</a>
+        <button type="submit" class="btn-primary">Filter</button>
+        @if(request()->hasAny(['search','status','room_type','dormitory_id']))
+        <a href="{{ route('admin.rooms.index') }}" class="btn-secondary">Clear</a>
+        @endif
     </form>
 </div>
 
-<div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-    <div class="overflow-x-auto">
-        <table class="w-full text-sm">
-            <thead class="bg-[#004D98] text-white">
-                <tr>
-                    <th class="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider">Room</th>
-                    <th class="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider">Type / Gender</th>
-                    <th class="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider">Occupancy</th>
-                    <th class="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider">Price/Month</th>
-                    <th class="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider">Status</th>
-                    <th class="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider">Actions</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-50">
-                @forelse($rooms as $room)
-                @php $pct = $room->capacity > 0 ? round(($room->occupied/$room->capacity)*100) : 0; @endphp
-                <tr class="hover:bg-blue-50/30 transition">
-                    <td class="px-5 py-4">
-                        <p class="font-extrabold text-gray-800">{{ $room->room_number }}</p>
-                        <p class="text-gray-400 text-xs">{{ $room->building }} · Floor {{ $room->floor }}</p>
-                    </td>
-                    <td class="px-5 py-4">
-                        <p class="font-semibold text-gray-700 capitalize">{{ $room->type }}</p>
-                        <p class="text-gray-400 text-xs capitalize">{{ $room->gender }}</p>
-                    </td>
-                    <td class="px-5 py-4">
-                        <div class="flex items-center gap-2">
-                            <span class="font-bold text-gray-700">{{ $room->occupied }}/{{ $room->capacity }}</span>
-                            <div class="w-16 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                                <div class="h-full rounded-full" style="width:{{ $pct }}%; background:{{ $pct>=100?'#A50044':($pct>=70?'#EDBB00':'#004D98') }}"></div>
-                            </div>
-                        </div>
-                    </td>
-                    <td class="px-5 py-4 font-semibold text-gray-700">₱{{ number_format($room->price_per_month,2) }}</td>
-                    <td class="px-5 py-4">
-                        <span class="px-2.5 py-1 rounded-full text-xs font-bold {{ $room->status==='available' ? 'bg-green-100 text-green-700' : ($room->status==='full' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700') }}">
-                            {{ ucfirst($room->status) }}
-                        </span>
-                    </td>
-                    <td class="px-5 py-4">
-                        <div class="flex gap-1.5">
-                            <a href="{{ route('admin.rooms.show',$room) }}" class="px-3 py-1.5 bg-[#004D98] text-white text-xs rounded-lg hover:bg-[#003a73] transition font-semibold">View</a>
-                            <a href="{{ route('admin.rooms.edit',$room) }}" class="px-3 py-1.5 bg-[#EDBB00] text-[#004D98] text-xs rounded-lg hover:bg-yellow-400 transition font-semibold">Edit</a>
-                            <form method="POST" action="{{ route('admin.rooms.destroy',$room) }}" onsubmit="return confirm('Delete Room {{ $room->room_number }}?')">
-                                @csrf @method('DELETE')
-                                <button class="px-3 py-1.5 bg-red-50 text-red-600 text-xs rounded-lg hover:bg-red-100 transition font-semibold">Delete</button>
-                            </form>
-                        </div>
-                    </td>
-                </tr>
-                @empty
-                <tr><td colspan="6" class="px-5 py-16 text-center text-gray-400">No rooms found. <a href="{{ route('admin.rooms.create') }}" class="text-[#004D98] font-semibold">Add one →</a></td></tr>
-                @endforelse
-            </tbody>
-        </table>
+<!-- Room Grid -->
+<div class="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-6">
+    @forelse($rooms as $room)
+    <div class="card p-5 hover:shadow-md transition-shadow">
+        <div class="flex items-start justify-between mb-3">
+            <div>
+                <h3 class="font-bold text-gray-900 dark:text-white text-lg">Room {{ $room->room_number }}</h3>
+                <p class="text-xs text-gray-500 dark:text-gray-400">{{ $room->dormitory->name }} · Floor {{ $room->floor_number }}</p>
+            </div>
+            <span class="{{ $room->status_badge }} capitalize">{{ $room->status }}</span>
+        </div>
+
+        <div class="space-y-2 mb-4">
+            <div class="flex items-center justify-between text-sm">
+                <span class="text-gray-500 dark:text-gray-400">Type</span>
+                <span class="font-medium capitalize text-gray-900 dark:text-white">{{ $room->room_type }}</span>
+            </div>
+            <div class="flex items-center justify-between text-sm">
+                <span class="text-gray-500 dark:text-gray-400">Capacity</span>
+                <span class="font-medium text-gray-900 dark:text-white">{{ $room->current_occupancy }}/{{ $room->capacity }}</span>
+            </div>
+            <div class="flex items-center justify-between text-sm">
+                <span class="text-gray-500 dark:text-gray-400">Rate/mo</span>
+                <span class="font-semibold text-primary-600 dark:text-primary-400">₱{{ number_format($room->monthly_rate, 0) }}</span>
+            </div>
+        </div>
+
+        <!-- Occupancy bar -->
+        <div class="mb-4">
+            <div class="h-1.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                @php $pct = $room->capacity > 0 ? ($room->current_occupancy / $room->capacity * 100) : 0; @endphp
+                <div class="h-full rounded-full transition-all {{ $pct >= 100 ? 'bg-red-500' : ($pct > 50 ? 'bg-yellow-500' : 'bg-green-500') }}"
+                     style="width: {{ $pct }}%"></div>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-1">
+            <a href="{{ route('admin.rooms.show', $room) }}" class="flex-1 btn-secondary text-xs justify-center py-1.5">
+                <i data-feather="eye" class="w-3 h-3"></i> View
+            </a>
+            <a href="{{ route('admin.rooms.edit', $room) }}" class="p-1.5 rounded-lg text-gray-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors">
+                <i data-feather="edit-2" class="w-4 h-4"></i>
+            </a>
+            <form action="{{ route('admin.rooms.destroy', $room) }}" method="POST"
+                  onsubmit="return confirm('Delete Room {{ $room->room_number }}?')">
+                @csrf @method('DELETE')
+                <button type="submit" class="p-1.5 rounded-lg text-gray-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+                    <i data-feather="trash-2" class="w-4 h-4"></i>
+                </button>
+            </form>
+        </div>
     </div>
-    @if($rooms->hasPages())
-    <div class="px-6 py-4 border-t border-gray-100 bg-gray-50">{{ $rooms->links() }}</div>
-    @endif
+    @empty
+    <div class="sm:col-span-2 lg:col-span-3 xl:col-span-4">
+        <div class="card p-12 text-center">
+            <i data-feather="grid" class="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3"></i>
+            <p class="text-gray-500 dark:text-gray-400 font-medium">No rooms found</p>
+            <a href="{{ route('admin.rooms.create') }}" class="btn-primary mt-4 inline-flex">
+                <i data-feather="plus" class="w-4 h-4"></i> Add Room
+            </a>
+        </div>
+    </div>
+    @endforelse
 </div>
+
+@if($rooms->hasPages())
+<div class="card p-4">{{ $rooms->links() }}</div>
+@endif
 @endsection

@@ -1,37 +1,188 @@
 @extends('layouts.app')
-@section('title','Student Detail')
+@section('title', $student->full_name)
+
 @section('content')
-<div class="max-w-3xl">
-    <div class="mb-6"><a href="{{ route('admin.students.index') }}" class="text-[#004D98] text-sm hover:underline">← Back</a></div>
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <div class="bg-[#004D98] px-6 py-5 text-white flex items-center gap-4">
-            <div class="w-14 h-14 rounded-full flex items-center justify-center font-black text-2xl {{ $student->gender==='male' ? 'bg-blue-300 text-blue-900' : 'bg-pink-300 text-pink-900' }}">
-                {{ strtoupper(substr($student->user->name,0,1)) }}
+<div class="page-header">
+    <div>
+        <div class="breadcrumb">
+            <a href="{{ route('admin.dashboard') }}">Home</a>
+            <i data-feather="chevron-right" class="w-3 h-3"></i>
+            <a href="{{ route('admin.students.index') }}">Students</a>
+            <i data-feather="chevron-right" class="w-3 h-3"></i>
+            <span>{{ $student->full_name }}</span>
+        </div>
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ $student->full_name }}</h1>
+    </div>
+    <div class="flex items-center gap-2">
+        <a href="{{ route('admin.students.edit', $student) }}" class="btn-primary">
+            <i data-feather="edit-2" class="w-4 h-4"></i> Edit
+        </a>
+        <a href="{{ route('admin.students.index') }}" class="btn-secondary">
+            <i data-feather="arrow-left" class="w-4 h-4"></i> Back
+        </a>
+    </div>
+</div>
+
+<div class="grid lg:grid-cols-3 gap-6">
+    <!-- Profile Card -->
+    <div class="space-y-6">
+        <div class="card p-6 text-center">
+            <img src="{{ $student->avatar_url }}" class="w-24 h-24 rounded-full mx-auto object-cover mb-4 ring-4 ring-primary-100 dark:ring-primary-900">
+            <h2 class="text-lg font-bold text-gray-900 dark:text-white">{{ $student->full_name }}</h2>
+            <p class="text-sm text-gray-500 dark:text-gray-400 font-mono mt-1">{{ $student->student_id }}</p>
+            <span class="{{ $student->status_badge }} mt-2">{{ ucfirst($student->status) }}</span>
+
+            <div class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 grid grid-cols-2 gap-4 text-center">
+                <div>
+                    <p class="text-xl font-bold text-gray-900 dark:text-white">{{ $student->allocations->count() }}</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Allocations</p>
+                </div>
+                <div>
+                    <p class="text-xl font-bold text-gray-900 dark:text-white">₱{{ number_format($student->total_paid, 0) }}</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Total Paid</p>
+                </div>
             </div>
-            <div>
-                <h1 class="text-xl font-black">{{ $student->user->name }}</h1>
-                <p class="text-blue-200 text-sm">{{ $student->student_number }} · {{ $student->course }}</p>
+        </div>
+
+        <div class="card p-6">
+            <h3 class="font-semibold text-gray-900 dark:text-white mb-4">Contact Info</h3>
+            <div class="space-y-3 text-sm">
+                <div class="flex items-start gap-2">
+                    <i data-feather="mail" class="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0"></i>
+                    <span class="text-gray-700 dark:text-gray-300 break-all">{{ $student->email }}</span>
+                </div>
+                <div class="flex items-start gap-2">
+                    <i data-feather="phone" class="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0"></i>
+                    <span class="text-gray-700 dark:text-gray-300">{{ $student->phone }}</span>
+                </div>
+                <div class="flex items-start gap-2">
+                    <i data-feather="map-pin" class="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0"></i>
+                    <span class="text-gray-700 dark:text-gray-300">{{ $student->home_address }}</span>
+                </div>
+                <div class="flex items-start gap-2">
+                    <i data-feather="calendar" class="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0"></i>
+                    <span class="text-gray-700 dark:text-gray-300">{{ $student->date_of_birth->format('F d, Y') }}</span>
+                </div>
             </div>
         </div>
-        <div class="p-6 grid grid-cols-2 md:grid-cols-3 gap-6">
-            @foreach([['Email',$student->user->email],['Course',$student->course],['Year','Year '.$student->year_level],['Gender',ucfirst($student->gender)],['Phone',$student->phone??'—'],['Emergency',$student->emergency_contact??'—']] as [$l,$v])
-            <div><p class="text-xs text-gray-400 font-bold uppercase tracking-wider mb-1">{{ $l }}</p><p class="text-gray-800 font-semibold text-sm">{{ $v }}</p></div>
-            @endforeach
+
+        <div class="card p-6">
+            <h3 class="font-semibold text-gray-900 dark:text-white mb-4">Emergency Contact</h3>
+            <div class="space-y-2 text-sm">
+                <p class="font-medium text-gray-900 dark:text-white">{{ $student->emergency_contact_name }}</p>
+                <p class="text-gray-500 dark:text-gray-400">{{ $student->emergency_contact_relation }}</p>
+                <p class="text-gray-700 dark:text-gray-300">{{ $student->emergency_contact_phone }}</p>
+            </div>
         </div>
-        @if($student->address)<div class="px-6 pb-4"><p class="text-xs text-gray-400 font-bold uppercase tracking-wider mb-1">Address</p><p class="text-gray-700 text-sm">{{ $student->address }}</p></div>@endif
-        <div class="border-t border-gray-100 px-6 py-5">
-            <h2 class="font-extrabold text-gray-800 mb-4">Allocation History</h2>
-            @if($student->allocations->count())
-            <table class="w-full text-sm"><thead class="text-xs text-gray-400 uppercase border-b border-gray-100"><tr><th class="pb-2 text-left">Room</th><th class="pb-2 text-left">From</th><th class="pb-2 text-left">Until</th><th class="pb-2 text-left">Status</th></tr></thead>
-            <tbody>@foreach($student->allocations as $a)
-            <tr class="border-b border-gray-50"><td class="py-2.5 font-semibold">Room {{ $a->room->room_number }}</td><td class="py-2.5 text-gray-500">{{ $a->allocation_date->format('M d, Y') }}</td><td class="py-2.5 text-gray-500">{{ $a->end_date?->format('M d, Y') ?? '—' }}</td>
-            <td class="py-2.5"><span class="px-2 py-0.5 rounded-full text-xs font-bold {{ $a->status==='active' ? 'bg-green-100 text-green-700' : ($a->status==='ended' ? 'bg-gray-100 text-gray-500' : 'bg-red-100 text-red-600') }}">{{ ucfirst($a->status) }}</span></td></tr>
-            @endforeach</tbody></table>
-            @else<p class="text-gray-400 text-sm">No allocation history.</p>@endif
+    </div>
+
+    <!-- Details -->
+    <div class="lg:col-span-2 space-y-6">
+        <!-- Academic & Current Room -->
+        <div class="grid sm:grid-cols-2 gap-4">
+            <div class="card p-6">
+                <h3 class="font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                    <i data-feather="book-open" class="w-4 h-4 text-primary-500"></i> Academic
+                </h3>
+                <dl class="space-y-2 text-sm">
+                    <div class="flex justify-between">
+                        <dt class="text-gray-500 dark:text-gray-400">Course</dt>
+                        <dd class="font-medium text-gray-900 dark:text-white">{{ $student->course }}</dd>
+                    </div>
+                    <div class="flex justify-between">
+                        <dt class="text-gray-500 dark:text-gray-400">Year Level</dt>
+                        <dd class="font-medium text-gray-900 dark:text-white">Year {{ $student->year_level }}</dd>
+                    </div>
+                    <div class="flex justify-between">
+                        <dt class="text-gray-500 dark:text-gray-400">Gender</dt>
+                        <dd class="font-medium text-gray-900 dark:text-white capitalize">{{ $student->gender }}</dd>
+                    </div>
+                </dl>
+            </div>
+            <div class="card p-6">
+                <h3 class="font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                    <i data-feather="key" class="w-4 h-4 text-primary-500"></i> Current Room
+                </h3>
+                @if($student->activeAllocation)
+                <dl class="space-y-2 text-sm">
+                    <div class="flex justify-between">
+                        <dt class="text-gray-500 dark:text-gray-400">Room</dt>
+                        <dd class="font-medium text-gray-900 dark:text-white">{{ $student->activeAllocation->room->room_number }}</dd>
+                    </div>
+                    <div class="flex justify-between">
+                        <dt class="text-gray-500 dark:text-gray-400">Dorm</dt>
+                        <dd class="font-medium text-gray-900 dark:text-white">{{ $student->activeAllocation->room->dormitory->name }}</dd>
+                    </div>
+                    <div class="flex justify-between">
+                        <dt class="text-gray-500 dark:text-gray-400">Check-in</dt>
+                        <dd class="font-medium text-gray-900 dark:text-white">{{ $student->activeAllocation->check_in_date->format('M d, Y') }}</dd>
+                    </div>
+                </dl>
+                @else
+                <div class="flex flex-col items-center justify-center h-16 text-gray-400 dark:text-gray-500">
+                    <i data-feather="home" class="w-6 h-6 mb-1"></i>
+                    <p class="text-xs">No active allocation</p>
+                </div>
+                @endif
+            </div>
         </div>
-        <div class="border-t border-gray-100 px-6 py-4 flex gap-3">
-            <a href="{{ route('admin.students.edit',$student) }}" class="px-5 py-2 bg-[#EDBB00] text-[#004D98] font-bold rounded-xl text-sm hover:bg-yellow-400 transition">Edit</a>
-            <a href="{{ route('admin.allocations.create') }}" class="px-5 py-2 bg-[#004D98] text-white font-bold rounded-xl text-sm hover:bg-[#003a73] transition">Assign Room</a>
+
+        <!-- Allocation History -->
+        <div class="card">
+            <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+                <h3 class="font-semibold text-gray-900 dark:text-white">Allocation History</h3>
+                <a href="{{ route('admin.allocations.create') }}?student_id={{ $student->id }}" class="btn-primary text-xs py-1.5">
+                    <i data-feather="plus" class="w-3 h-3"></i> Allocate Room
+                </a>
+            </div>
+            <div class="table-container">
+                <table class="table">
+                    <thead><tr><th>Room</th><th>Check-in</th><th>Check-out</th><th>Status</th></tr></thead>
+                    <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+                        @forelse($student->allocations as $alloc)
+                        <tr>
+                            <td>
+                                <p class="font-medium">Room {{ $alloc->room->room_number }}</p>
+                                <p class="text-xs text-gray-500 dark:text-gray-400">{{ $alloc->room->dormitory->name }}</p>
+                            </td>
+                            <td>{{ $alloc->check_in_date->format('M d, Y') }}</td>
+                            <td>{{ $alloc->check_out_date?->format('M d, Y') ?? '—' }}</td>
+                            <td><span class="{{ $alloc->status_badge }}">{{ ucfirst($alloc->status) }}</span></td>
+                        </tr>
+                        @empty
+                        <tr><td colspan="4" class="px-6 py-6 text-center text-gray-400 dark:text-gray-500 text-sm">No allocation history</td></tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Payment History -->
+        <div class="card">
+            <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+                <h3 class="font-semibold text-gray-900 dark:text-white">Payment History</h3>
+                <a href="{{ route('admin.payments.create') }}?student_id={{ $student->id }}" class="btn-primary text-xs py-1.5">
+                    <i data-feather="plus" class="w-3 h-3"></i> Add Payment
+                </a>
+            </div>
+            <div class="table-container">
+                <table class="table">
+                    <thead><tr><th>Reference</th><th>Type</th><th>Amount</th><th>Date</th><th>Status</th></tr></thead>
+                    <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+                        @forelse($student->payments as $pay)
+                        <tr>
+                            <td class="font-mono text-xs">{{ $pay->payment_reference }}</td>
+                            <td>{{ $pay->getPaymentTypeLabel() }}</td>
+                            <td class="font-semibold">₱{{ number_format($pay->amount, 2) }}</td>
+                            <td>{{ $pay->payment_date->format('M d, Y') }}</td>
+                            <td><span class="{{ $pay->status_badge }}">{{ ucfirst($pay->status) }}</span></td>
+                        </tr>
+                        @empty
+                        <tr><td colspan="5" class="px-6 py-6 text-center text-gray-400 dark:text-gray-500 text-sm">No payment history</td></tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>

@@ -1,66 +1,123 @@
 @extends('layouts.app')
-@section('title','Allocations')
+@section('title', 'Allocations')
+
 @section('content')
-<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-    <div><h1 class="text-2xl font-extrabold text-gray-800">Allocations</h1><p class="text-gray-400 text-sm">Manage all room assignments</p></div>
-    <a href="{{ route('admin.allocations.create') }}" class="inline-flex items-center gap-2 px-5 py-2.5 bg-[#A50044] text-white font-bold rounded-xl hover:bg-[#7A003C] transition text-sm shadow">+ Assign Room</a>
+<div class="page-header">
+    <div>
+        <div class="breadcrumb">
+            <a href="{{ route('admin.dashboard') }}">Home</a>
+            <i data-feather="chevron-right" class="w-3 h-3"></i>
+            <span>Allocations</span>
+        </div>
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Room Allocations</h1>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage student room assignments</p>
+    </div>
+    <a href="{{ route('admin.allocations.create') }}" class="btn-primary">
+        <i data-feather="plus" class="w-4 h-4"></i> New Allocation
+    </a>
 </div>
-<div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-6">
-    <form method="GET" class="flex flex-wrap gap-3">
-        <input type="text" name="search" value="{{ request('search') }}" placeholder="Search student, room..."
-               class="flex-1 min-w-44 px-4 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#004D98] bg-gray-50">
-        <select name="status" class="px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#004D98] bg-gray-50">
+
+<!-- Filters -->
+<div class="card p-4 mb-6">
+    <form method="GET" class="flex flex-col sm:flex-row gap-3">
+        <div class="flex-1 relative">
+            <i data-feather="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"></i>
+            <input type="text" name="search" value="{{ request('search') }}" placeholder="Search by student name or ID..." class="form-input pl-9">
+        </div>
+        <select name="status" class="form-input w-full sm:w-40">
             <option value="">All Status</option>
-            <option value="active"    {{ request('status')=='active'?'selected':'' }}>Active</option>
-            <option value="ended"     {{ request('status')=='ended'?'selected':'' }}>Ended</option>
-            <option value="cancelled" {{ request('status')=='cancelled'?'selected':'' }}>Cancelled</option>
+            @foreach(['active','checked_out','cancelled','expired'] as $s)
+            <option value="{{ $s }}" {{ request('status') == $s ? 'selected' : '' }}>{{ ucfirst(str_replace('_',' ',$s)) }}</option>
+            @endforeach
         </select>
-        <button type="submit" class="px-5 py-2 bg-[#004D98] text-white rounded-xl text-sm font-bold hover:bg-[#003a73] transition">Filter</button>
-        <a href="{{ route('admin.allocations.index') }}" class="px-5 py-2 border border-gray-200 text-gray-500 rounded-xl text-sm hover:bg-gray-50 transition">Reset</a>
+        <button type="submit" class="btn-primary">Filter</button>
+        @if(request()->hasAny(['search','status']))
+        <a href="{{ route('admin.allocations.index') }}" class="btn-secondary">Clear</a>
+        @endif
     </form>
 </div>
-<div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-    <div class="overflow-x-auto">
-        <table class="w-full text-sm">
-            <thead class="bg-[#004D98] text-white">
+
+<div class="card">
+    <div class="table-container">
+        <table class="table">
+            <thead>
                 <tr>
-                    <th class="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider">Student</th>
-                    <th class="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider">Room</th>
-                    <th class="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider">From</th>
-                    <th class="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider">Until</th>
-                    <th class="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider">Status</th>
-                    <th class="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider">Actions</th>
+                    <th>Student</th>
+                    <th>Room</th>
+                    <th>Check-in</th>
+                    <th>Expected Check-out</th>
+                    <th>Duration</th>
+                    <th>Status</th>
+                    <th>Allocated By</th>
+                    <th class="text-right">Actions</th>
                 </tr>
             </thead>
-            <tbody class="divide-y divide-gray-50">
-                @forelse($allocations as $a)
-                <tr class="hover:bg-blue-50/30 transition">
-                    <td class="px-5 py-4"><p class="font-bold text-gray-800">{{ $a->student->user->name }}</p><p class="text-gray-400 text-xs">{{ $a->student->student_number }}</p></td>
-                    <td class="px-5 py-4"><p class="font-semibold text-gray-700">Room {{ $a->room->room_number }}</p><p class="text-gray-400 text-xs">{{ $a->room->building }}</p></td>
-                    <td class="px-5 py-4 text-gray-600">{{ $a->allocation_date->format('M d, Y') }}</td>
-                    <td class="px-5 py-4 text-gray-600">{{ $a->end_date?->format('M d, Y') ?? '—' }}</td>
-                    <td class="px-5 py-4">
-                        <span class="px-2.5 py-1 rounded-full text-xs font-bold {{ $a->status==='active' ? 'bg-green-100 text-green-700' : ($a->status==='ended' ? 'bg-gray-100 text-gray-500' : 'bg-red-100 text-red-600') }}">
-                            {{ ucfirst($a->status) }}
-                        </span>
+            <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+                @forelse($allocations as $alloc)
+                <tr>
+                    <td>
+                        <div class="flex items-center gap-3">
+                            <img src="{{ $alloc->student->avatar_url }}" class="w-8 h-8 rounded-full object-cover flex-shrink-0">
+                            <div>
+                                <p class="font-medium text-gray-900 dark:text-white">{{ $alloc->student->full_name }}</p>
+                                <p class="text-xs text-gray-500 dark:text-gray-400 font-mono">{{ $alloc->student->student_id }}</p>
+                            </div>
+                        </div>
                     </td>
-                    <td class="px-5 py-4">
-                        <div class="flex gap-1.5">
-                            <a href="{{ route('admin.allocations.show',$a) }}" class="px-3 py-1.5 bg-[#004D98] text-white text-xs rounded-lg hover:bg-[#003a73] transition font-semibold">View</a>
-                            <a href="{{ route('admin.allocations.edit',$a) }}" class="px-3 py-1.5 bg-[#EDBB00] text-[#004D98] text-xs rounded-lg hover:bg-yellow-400 transition font-semibold">Edit</a>
-                            <form method="POST" action="{{ route('admin.allocations.destroy',$a) }}" onsubmit="return confirm('Delete this allocation?')">
-                                @csrf @method('DELETE')
-                                <button class="px-3 py-1.5 bg-red-50 text-red-600 text-xs rounded-lg hover:bg-red-100 transition font-semibold">Delete</button>
+                    <td>
+                        <p class="font-medium">Room {{ $alloc->room->room_number }}</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">{{ $alloc->room->dormitory->name }}</p>
+                    </td>
+                    <td>{{ $alloc->check_in_date->format('M d, Y') }}</td>
+                    <td>{{ $alloc->expected_check_out_date?->format('M d, Y') ?? '—' }}</td>
+                    <td>{{ $alloc->duration_in_days }}d</td>
+                    <td><span class="{{ $alloc->status_badge }} capitalize">{{ str_replace('_',' ',$alloc->status) }}</span></td>
+                    <td class="text-xs text-gray-500 dark:text-gray-400">{{ $alloc->allocatedBy->name }}</td>
+                    <td>
+                        <div class="flex items-center justify-end gap-1">
+                            <a href="{{ route('admin.allocations.show', $alloc) }}" class="p-1.5 rounded-lg text-gray-500 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors" title="View">
+                                <i data-feather="eye" class="w-4 h-4"></i>
+                            </a>
+                            @if($alloc->status === 'active')
+                            <form action="{{ route('admin.allocations.checkout', $alloc) }}" method="POST"
+                                  onsubmit="return confirm('Check out {{ $alloc->student->full_name }}?')">
+                                @csrf
+                                <button type="submit" class="p-1.5 rounded-lg text-gray-500 hover:text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors" title="Check Out">
+                                    <i data-feather="log-out" class="w-4 h-4"></i>
+                                </button>
                             </form>
+                            @endif
+                            <a href="{{ route('admin.allocations.edit', $alloc) }}" class="p-1.5 rounded-lg text-gray-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors" title="Edit">
+                                <i data-feather="edit-2" class="w-4 h-4"></i>
+                            </a>
+                            @if($alloc->status !== 'active')
+                            <form action="{{ route('admin.allocations.destroy', $alloc) }}" method="POST"
+                                  onsubmit="return confirm('Delete this allocation?')">
+                                @csrf @method('DELETE')
+                                <button type="submit" class="p-1.5 rounded-lg text-gray-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors" title="Delete">
+                                    <i data-feather="trash-2" class="w-4 h-4"></i>
+                                </button>
+                            </form>
+                            @endif
                         </div>
                     </td>
                 </tr>
                 @empty
-                <tr><td colspan="6" class="px-5 py-16 text-center text-gray-400">No allocations found.</td></tr>
+                <tr>
+                    <td colspan="8" class="px-6 py-12 text-center">
+                        <i data-feather="key" class="w-10 h-10 text-gray-300 dark:text-gray-600 mx-auto mb-3"></i>
+                        <p class="text-gray-500 dark:text-gray-400 font-medium">No allocations found</p>
+                        <a href="{{ route('admin.allocations.create') }}" class="btn-primary mt-4 inline-flex">
+                            <i data-feather="plus" class="w-4 h-4"></i> New Allocation
+                        </a>
+                    </td>
+                </tr>
                 @endforelse
             </tbody>
         </table>
     </div>
-    @if($allocations->hasPages())<div class="px-6 py-4 border-t border-gray-100 bg-gray-50">{{ $allocations->links() }}</div>@endif
+    @if($allocations->hasPages())
+    <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-700">{{ $allocations->links() }}</div>
+    @endif
 </div>
 @endsection
