@@ -10,13 +10,14 @@ return new class extends Migration
     {
         Schema::create('allocations', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('student_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('room_id')->constrained()->cascadeOnDelete();
-            $table->date('allocation_date');
-            $table->date('end_date')->nullable();
-            $table->enum('status', ['active', 'ended', 'cancelled'])->default('active');
+            $table->foreignId('student_id')->constrained()->onDelete('cascade');
+            $table->foreignId('room_id')->constrained()->onDelete('cascade');
+            $table->date('check_in_date');
+            $table->date('check_out_date')->nullable();
+            $table->string('status')->default('active'); // active, completed, cancelled
             $table->text('notes')->nullable();
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

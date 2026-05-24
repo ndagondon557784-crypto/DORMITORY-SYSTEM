@@ -10,20 +10,16 @@ return new class extends Migration
     {
         Schema::create('payments', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('allocation_id')->constrained()->onDelete('cascade');
             $table->foreignId('student_id')->constrained()->onDelete('cascade');
-            $table->foreignId('received_by')->constrained('users')->onDelete('cascade');
-            $table->string('payment_reference')->unique();
+            $table->foreignId('allocation_id')->nullable()->constrained()->onDelete('set null');
             $table->decimal('amount', 10, 2);
-            $table->enum('payment_type', ['monthly_rent', 'deposit', 'utility', 'penalty', 'other'])->default('monthly_rent');
-            $table->enum('payment_method', ['cash', 'bank_transfer', 'gcash', 'maya', 'check'])->default('cash');
-            $table->enum('status', ['paid', 'pending', 'overdue', 'cancelled'])->default('paid');
             $table->date('payment_date');
-            $table->date('due_date')->nullable();
-            $table->string('period_month')->nullable(); // e.g., "2024-01"
+            $table->string('payment_method')->default('cash'); // cash, bank_transfer, online
+            $table->string('status')->default('completed'); // completed, pending, failed
+            $table->string('reference_number')->nullable();
             $table->text('notes')->nullable();
-            $table->string('receipt_number')->nullable();
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

@@ -10,44 +10,19 @@ class ActivityLog extends Model
     use HasFactory;
 
     protected $fillable = [
-        'user_id', 'action', 'model_type', 'model_id',
-        'description', 'old_values', 'new_values', 'ip_address', 'user_agent',
+        'user_id',
+        'action',
+        'model',
+        'model_id',
+        'changes',
+        'ip_address',
+        'user_agent',
     ];
 
-    protected $casts = [
-        'old_values' => 'array',
-        'new_values' => 'array',
-    ];
+    public $timestamps = true;
 
     public function user()
     {
         return $this->belongsTo(User::class);
-    }
-
-    public static function record(string $action, string $description, $model = null, array $old = [], array $new = []): void
-    {
-        static::create([
-            'user_id' => auth()->id(),
-            'action' => $action,
-            'model_type' => $model ? get_class($model) : null,
-            'model_id' => $model?->id,
-            'description' => $description,
-            'old_values' => $old ?: null,
-            'new_values' => $new ?: null,
-            'ip_address' => request()->ip(),
-            'user_agent' => request()->userAgent(),
-        ]);
-    }
-
-    public function getActionIconAttribute(): string
-    {
-        return match($this->action) {
-            'create' => 'plus-circle',
-            'update' => 'edit',
-            'delete' => 'trash-2',
-            'login' => 'log-in',
-            'logout' => 'log-out',
-            default => 'activity',
-        };
     }
 }

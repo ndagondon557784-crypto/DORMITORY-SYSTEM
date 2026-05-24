@@ -1,167 +1,141 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
-use App\Models\{ActivityLog, Allocation, Notification, Room, Student};
-use Illuminate\Http\Request;
+use App\Models\Allocation;
+use App\Models\Student;
+use App\Models\Room;
+use App\Http\Requests\StoreAllocationRequest;
+use App\Http\Requests\UpdateAllocationRequest;
+use Illuminate\View\View;
+use Illuminate\Http\RedirectResponse;
 
 class AllocationController extends Controller
 {
-    public function index(Request $request)
+    public function index(): View
     {
-        $query = Allocation::with(['student', 'room.dormitory', 'allocatedBy']);
+        $allocations = Allocation::with('student.user', 'room.building')
+            ->paginate(15);
 
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->whereHas('student', fn($q) => $q->where('first_name', 'like', "%{$search}%")
-                ->orWhere('last_name', 'like', "%{$search}%")
-                ->orWhere('student_id', 'like', "%{$search}%"));
-        }
-
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
-
-        $allocations = $query->latest()->paginate(15)->withQueryString();
-
-        return view('admin.allocations.index', compact('allocations'));
+        return view('allocations.index', compact('allocations'));
     }
 
-    public function create()
+    public function create(): View
     {
-        $students = Student::where('status', 'active')
-            ->whereDoesntHave('allocations', fn($q) => $q->where('status', 'active'))
-            ->orderBy('first_name')
+        $students = Student::with('user')->get();
+        $rooms = Room::where('is_active', true)
+            ->where('status', 'available')
+            ->with('building')
             ->get();
 
-        $rooms = Room::with('dormitory')
-            ->whereIn('status', ['available', 'occupied'])
-            ->where('current_occupancy', '<', \DB::raw('capacity'))
-            ->get();
-
-        return view('admin.allocations.create', compact('students', 'rooms'));
+        return view('allocations.create', compact('students', 'rooms'));
     }
 
-    public function store(Request $request)
+    public function store(StoreAllocationRequest $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'student_id' => 'required|exists:students,id',
-            'room_id' => 'required|exists:rooms,id',
-            'check_in_date' => 'required|date',
-            'expected_check_out_date' => 'nullable|date|after:check_in_date',
-            'deposit_amount' => 'nullable|numeric|min:0',
-            'notes' => 'nullable|string',
-        ]);
-
-        // Validate student doesn't have active allocation
-        $existingAllocation = Allocation::where('student_id', $validated['student_id'])
-            ->where('status', 'active')
-            ->exists();
-
-        if ($existingAllocation) {
-            return back()->withErrors(['student_id' => 'This student already has an active room allocation.'])->withInput();
-        }
-
-        $room = Room::findOrFail($validated['room_id']);
-
-        if ($room->available_slots <= 0) {
-            return back()->withErrors(['room_id' => 'This room is no longer available.'])->withInput();
-        }
-
-        $validated['allocated_by'] = auth()->id();
-
-        $allocation = Allocation::create($validated);
-        $room->updateOccupancy();
-
-        $student = $allocation->student;
-
-        ActivityLog::record('create', "Allocated room {$room->room_number} to {$student->full_name}", $allocation);
-
-        Notification::broadcast(
-            'New Room Allocation',
-            "{$student->full_name} has been allocated to Room {$room->room_number}.",
-            'info',
-            route('admin.allocations.show', $allocation)
-        );
-
-        return redirect()->route('admin.allocations.index')
-            ->with('success', "Room allocated successfully to {$student->full_name}.");
-    }
-
-    public function show(Allocation $allocation)
-    {
-        $allocation->load(['student', 'room.dormitory', 'allocatedBy', 'payments.receivedBy']);
-        return view('admin.allocations.show', compact('allocation'));
-    }
-
-    public function edit(Allocation $allocation)
-    {
-        $students = Student::where('status', 'active')->orderBy('first_name')->get();
-        $rooms = Room::with('dormitory')->get();
-        return view('admin.allocations.edit', compact('allocation', 'students', 'rooms'));
-    }
-
-    public function update(Request $request, Allocation $allocation)
-    {
-        $validated = $request->validate([
-            'check_in_date' => 'required|date',
-            'expected_check_out_date' => 'nullable|date|after:check_in_date',
-            'deposit_amount' => 'nullable|numeric|min:0',
-            'status' => 'required|in:active,checked_out,cancelled,expired',
-            'notes' => 'nullable|string',
-        ]);
-
-        $old = $allocation->toArray();
-        $oldStatus = $allocation->status;
-
-        $allocation->update($validated);
-
-        // If status changed to checked_out or cancelled, update room
-        if ($oldStatus === 'active' && in_array($validated['status'], ['checked_out', 'cancelled'])) {
-            if ($validated['status'] === 'checked_out') {
-                $allocation->update(['check_out_date' => now()]);
-            }
-            $allocation->room->updateOccupancy();
-        }
-
-        ActivityLog::record('update', "Updated allocation #{$allocation->id}", $allocation, $old, $allocation->fresh()->toArray());
-
-        return redirect()->route('admin.allocations.show', $allocation)
-            ->with('success', 'Allocation updated successfully.');
-    }
-
-    public function destroy(Allocation $allocation)
-    {
-        if ($allocation->status === 'active') {
-            return back()->with('error', 'Cannot delete an active allocation. Please check out the student first.');
-        }
+        $allocation = Allocation::create($request->validated());
 
         $room = $allocation->room;
-        ActivityLog::record('delete', "Deleted allocation #{$allocation->id}", $allocation);
-        $allocation->delete();
-        $room->updateOccupancy();
+        $room->current_occupancy += 1;
+        if ($room->current_occupancy >= $room->capacity) {
+            $room->status = 'occupied';
+        }
+        $room->save();
 
-        return redirect()->route('admin.allocations.index')
-            ->with('success', 'Allocation deleted successfully.');
+        $student = $allocation->student;
+        $student->outstanding_balance = $room->monthly_rent;
+        $student->save();
+
+        return redirect()->route('allocations.index')
+            ->with('success', 'Allocation created successfully');
     }
 
-    public function checkout(Request $request, Allocation $allocation)
+    public function show(Allocation $allocation): View
     {
-        if ($allocation->status !== 'active') {
-            return back()->with('error', 'This allocation is not active.');
+        $allocation->load('student.user', 'room.building', 'payments');
+        return view('allocations.show', compact('allocation'));
+    }
+
+    public function edit(Allocation $allocation): View
+    {
+        $students = Student::with('user')->get();
+        $rooms = Room::where('is_active', true)->with('building')->get();
+
+        return view('allocations.edit', compact('allocation', 'students', 'rooms'));
+    }
+
+    public function update(UpdateAllocationRequest $request, Allocation $allocation): RedirectResponse
+    {
+        $oldRoom = $allocation->room;
+        $allocation->update($request->validated());
+
+        if ($allocation->room_id !== $oldRoom->id) {
+            $oldRoom->current_occupancy -= 1;
+            if ($oldRoom->current_occupancy < $oldRoom->capacity) {
+                $oldRoom->status = 'available';
+            }
+            $oldRoom->save();
+
+            $newRoom = $allocation->room;
+            $newRoom->current_occupancy += 1;
+            if ($newRoom->current_occupancy >= $newRoom->capacity) {
+                $newRoom->status = 'occupied';
+            }
+            $newRoom->save();
         }
 
-        $allocation->update([
-            'status' => 'checked_out',
-            'check_out_date' => now(),
-        ]);
+        return redirect()->route('allocations.show', $allocation)
+            ->with('success', 'Allocation updated successfully');
+    }
 
-        $allocation->room->updateOccupancy();
+    public function checkout(Allocation $allocation): RedirectResponse
+    {
+        $allocation->status = 'completed';
+        $allocation->check_out_date = now()->toDateString();
+        $allocation->save();
 
-        ActivityLog::record('update', "Checked out {$allocation->student->full_name} from room {$allocation->room->room_number}", $allocation);
+        $room = $allocation->room;
+        $room->current_occupancy -= 1;
+        if ($room->current_occupancy < $room->capacity) {
+            $room->status = 'available';
+        }
+        $room->save();
 
-        return redirect()->route('admin.allocations.show', $allocation)
-            ->with('success', 'Student checked out successfully.');
+        return redirect()->route('allocations.show', $allocation)
+            ->with('success', 'Student checked out successfully');
+    }
+
+    public function destroy(Allocation $allocation): RedirectResponse
+    {
+        $room = $allocation->room;
+        $room->current_occupancy -= 1;
+        if ($room->current_occupancy < $room->capacity) {
+            $room->status = 'available';
+        }
+        $room->save();
+
+        $allocation->delete();
+
+        return redirect()->route('allocations.index')
+            ->with('success', 'Allocation deleted successfully');
+    }
+
+    public function search()
+    {
+        $query = request()->input('query');
+        $allocations = Allocation::whereHas('student.user', function ($q) use ($query) {
+            $q->where('name', 'like', "%{$query}%")
+                ->orWhere('email', 'like', "%{$query}%");
+        })
+            ->orWhereHas('student', function ($q) use ($query) {
+                $q->where('student_id', 'like', "%{$query}%");
+            })
+            ->orWhereHas('room', function ($q) use ($query) {
+                $q->where('room_number', 'like', "%{$query}%");
+            })
+            ->with('student.user', 'room.building')
+            ->paginate(15);
+
+        return view('allocations.index', compact('allocations'));
     }
 }

@@ -3,28 +3,34 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Model;
 
 class Room extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'dormitory_id', 'room_number', 'room_type', 'capacity',
-        'current_occupancy', 'monthly_rate', 'floor_number',
-        'status', 'amenities', 'description',
+        'building_id',
+        'room_number',
+        'capacity',
+        'current_occupancy',
+        'monthly_rent',
+        'type',
+        'status',
+        'amenities',
+        'floor',
+        'is_active',
     ];
 
     protected $casts = [
-        'monthly_rate' => 'decimal:2',
-        'capacity' => 'integer',
-        'current_occupancy' => 'integer',
-        'floor_number' => 'integer',
+        'monthly_rent' => 'decimal:2',
+        'is_active' => 'boolean',
     ];
 
-    public function dormitory()
+    public function building()
     {
-        return $this->belongsTo(Dormitory::class);
+        return $this->belongsTo(Building::class);
     }
 
     public function allocations()
@@ -32,52 +38,19 @@ class Room extends Model
         return $this->hasMany(Allocation::class);
     }
 
-    public function activeAllocations()
+    public function currentAllocations()
     {
-        return $this->hasMany(Allocation::class)->where('status', 'active');
+        return $this->hasMany(Allocation::class)
+            ->where('status', 'active');
     }
 
-    public function currentTenants()
+    public function getAvailableSpacesAttribute()
     {
-        return $this->hasManyThrough(Student::class, Allocation::class, 'room_id', 'id', 'id', 'student_id')
-            ->where('allocations.status', 'active');
+        return $this->capacity - $this->current_occupancy;
     }
 
-    public function getIsAvailableAttribute(): bool
+    public function isAvailable()
     {
-        return in_array($this->status, ['available', 'occupied']) && $this->current_occupancy < $this->capacity;
-    }
-
-    public function getAvailableSlotsAttribute(): int
-    {
-        return max(0, $this->capacity - $this->current_occupancy);
-    }
-
-    public function getStatusBadgeAttribute(): string
-    {
-        return match($this->status) {
-            'available' => 'badge-success',
-            'occupied' => 'badge-warning',
-            'full' => 'badge-danger',
-            'maintenance' => 'badge-secondary',
-            'reserved' => 'badge-info',
-            default => 'badge-secondary',
-        };
-    }
-
-    public function updateOccupancy(): void
-    {
-        $count = $this->allocations()->where('status', 'active')->count();
-        $this->current_occupancy = $count;
-
-        if ($count === 0) {
-            $this->status = 'available';
-        } elseif ($count >= $this->capacity) {
-            $this->status = 'full';
-        } else {
-            $this->status = 'occupied';
-        }
-
-        $this->save();
+        return $this->status === 'available' && $this->available_spaces > 0;
     }
 }

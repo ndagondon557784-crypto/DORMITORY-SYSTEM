@@ -10,16 +10,18 @@ return new class extends Migration
     {
         Schema::create('rooms', function (Blueprint $table) {
             $table->id();
-            $table->string('room_number', 20)->unique();
-            $table->unsignedTinyInteger('capacity')->default(2);
-            $table->enum('type', ['single', 'double', 'triple', 'dormitory']);
-            $table->enum('gender', ['male', 'female', 'mixed'])->default('mixed');
-            $table->string('floor', 50)->nullable();
-            $table->string('building', 100)->nullable();
-            $table->decimal('price_per_month', 10, 2)->default(0);
-            $table->text('description')->nullable();
-            $table->enum('status', ['available', 'full', 'maintenance'])->default('available');
+            $table->foreignId('building_id')->constrained()->onDelete('cascade');
+            $table->string('room_number')->unique();
+            $table->integer('capacity')->default(1);
+            $table->integer('current_occupancy')->default(0);
+            $table->decimal('monthly_rent', 10, 2);
+            $table->string('type')->default('single'); // single, double, triple
+            $table->string('status')->default('available'); // available, occupied, maintenance
+            $table->text('amenities')->nullable();
+            $table->string('floor')->nullable();
+            $table->boolean('is_active')->default(true);
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

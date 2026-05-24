@@ -1,66 +1,76 @@
 <?php
 
-use App\Http\Controllers\Auth\LoginController;
-use App\Http\Controllers\Admin\{
-    DashboardController,
-    DormitoryController,
-    StudentController,
-    RoomController,
-    AllocationController,
-    PaymentController,
-    UserController,
-    NotificationController,
-};
+use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\StudentController;
+use App\Http\Controllers\RoomController;
+use App\Http\Controllers\AllocationController;
+use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\ReportController;
+use App\Http\Controllers\SettingController;
+use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\LandingController;
 use Illuminate\Support\Facades\Route;
 
-// Public landing page
-Route::get('/', fn() => view('welcome'))->name('home');
+// Landing Page
+Route::get('/', [LandingController::class, 'index'])->name('landing');
 
-// Auth routes
+// Auth Routes
 Route::middleware('guest')->group(function () {
-    Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
-    Route::post('/login', [LoginController::class, 'login'])->name('login.post');
+    Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
+    Route::post('/login', [AuthController::class, 'login']);
+    Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
+    Route::post('/register', [AuthController::class, 'register']);
 });
 
-Route::post('/logout', [LoginController::class, 'logout'])->name('logout')->middleware('auth');
+Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
 
-// Admin routes
-Route::prefix('admin')->name('admin.')->middleware('auth')->group(function () {
+// Authenticated Routes
+Route::middleware(['auth'])->group(function () {
 
     // Dashboard
-    Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     // Profile
-    Route::get('/profile', [UserController::class, 'profile'])->name('profile');
-    Route::post('/profile', [UserController::class, 'updateProfile'])->name('profile.update');
+    Route::get('/profile', [ProfileController::class, 'index'])->name('profile.index');
+    Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password');
+    Route::post('/profile/avatar', [ProfileController::class, 'uploadAvatar'])->name('profile.avatar');
 
-    // Dormitories
-    Route::resource('dormitories', DormitoryController::class);
-
-    // Rooms
-    Route::resource('rooms', RoomController::class);
-    Route::get('/rooms-availability', [RoomController::class, 'checkAvailability'])->name('rooms.availability');
+    // Notifications
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/notifications/{id}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead'])->name('notifications.read-all');
 
     // Students
     Route::resource('students', StudentController::class);
+    Route::post('/students/{student}/allocate', [StudentController::class, 'autoAllocate'])->name('students.auto-allocate');
+
+    // Rooms
+    Route::resource('rooms', RoomController::class);
+    Route::get('/rooms/{room}/availability', [RoomController::class, 'availability'])->name('rooms.availability');
 
     // Allocations
     Route::resource('allocations', AllocationController::class);
     Route::post('/allocations/{allocation}/checkout', [AllocationController::class, 'checkout'])->name('allocations.checkout');
+    Route::post('/allocations/{allocation}/checkin', [AllocationController::class, 'checkin'])->name('allocations.checkin');
+    Route::get('/allocations/{allocation}/receipt', [AllocationController::class, 'receipt'])->name('allocations.receipt');
 
     // Payments
     Route::resource('payments', PaymentController::class);
-    Route::get('/students/{student}/allocation', [PaymentController::class, 'getStudentAllocations'])->name('students.allocation');
+    Route::get('/payments/{payment}/receipt', [PaymentController::class, 'receipt'])->name('payments.receipt');
+    Route::post('/payments/{payment}/verify', [PaymentController::class, 'verify'])->name('payments.verify');
 
-    // Users
-    Route::resource('users', UserController::class);
-
-    // Notifications
-    Route::prefix('notifications')->name('notifications.')->group(function () {
-        Route::get('/', [NotificationController::class, 'index'])->name('index');
-        Route::post('/{notification}/read', [NotificationController::class, 'markRead'])->name('read');
-        Route::post('/mark-all-read', [NotificationController::class, 'markAllRead'])->name('mark-all-read');
-        Route::get('/unread', [NotificationController::class, 'getUnread'])->name('unread');
-        Route::delete('/{notification}', [NotificationController::class, 'destroy'])->name('destroy');
+    // Users (Admin only)
+    Route::middleware('role:admin')->group(function () {
+        Route::resource('users', UserController::class);
+        Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+        Route::get('/reports/occupancy', [ReportController::class, 'occupancy'])->name('reports.occupancy');
+        Route::get('/reports/payments', [ReportController::class, 'payments'])->name('reports.payments');
+        Route::get('/reports/export', [ReportController::class, 'export'])->name('reports.export');
+        Route::get('/settings', [SettingController::class, 'index'])->name('settings.index');
+        Route::put('/settings', [SettingController::class, 'update'])->name('settings.update');
     });
 });

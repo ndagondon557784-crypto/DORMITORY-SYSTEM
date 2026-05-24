@@ -3,64 +3,41 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Model;
 
 class Payment extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'allocation_id', 'student_id', 'received_by', 'payment_reference',
-        'amount', 'payment_type', 'payment_method', 'status',
-        'payment_date', 'due_date', 'period_month', 'notes', 'receipt_number',
+        'student_id',
+        'allocation_id',
+        'amount',
+        'payment_date',
+        'payment_method',
+        'status',
+        'reference_number',
+        'notes',
     ];
 
     protected $casts = [
         'amount' => 'decimal:2',
         'payment_date' => 'date',
-        'due_date' => 'date',
     ];
-
-    public function allocation()
-    {
-        return $this->belongsTo(Allocation::class);
-    }
 
     public function student()
     {
         return $this->belongsTo(Student::class);
     }
 
-    public function receivedBy()
+    public function allocation()
     {
-        return $this->belongsTo(User::class, 'received_by');
+        return $this->belongsTo(Allocation::class);
     }
 
-    public static function generateReference(): string
+    public function isCompleted()
     {
-        return 'PAY-' . strtoupper(uniqid());
-    }
-
-    public function getStatusBadgeAttribute(): string
-    {
-        return match($this->status) {
-            'paid' => 'badge-success',
-            'pending' => 'badge-warning',
-            'overdue' => 'badge-danger',
-            'cancelled' => 'badge-secondary',
-            default => 'badge-secondary',
-        };
-    }
-
-    public function getPaymentTypeLabel(): string
-    {
-        return match($this->payment_type) {
-            'monthly_rent' => 'Monthly Rent',
-            'deposit' => 'Security Deposit',
-            'utility' => 'Utility Bill',
-            'penalty' => 'Penalty Fee',
-            'other' => 'Other',
-            default => ucfirst($this->payment_type),
-        };
+        return $this->status === 'completed';
     }
 }

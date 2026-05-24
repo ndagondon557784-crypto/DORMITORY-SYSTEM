@@ -10,15 +10,18 @@ return new class extends Migration
     {
         Schema::create('students', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->unique()->constrained()->cascadeOnDelete();
-            $table->string('student_number')->unique();
+            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->string('student_id')->unique();
             $table->string('course');
-            $table->unsignedTinyInteger('year_level')->default(1);
-            $table->enum('gender', ['male', 'female', 'other']);
-            $table->string('phone', 20)->nullable();
-            $table->text('address')->nullable();
-            $table->string('emergency_contact')->nullable();
+            $table->string('year')->nullable();
+            $table->string('phone')->nullable();
+            $table->date('date_of_birth')->nullable();
+            $table->string('address')->nullable();
+            $table->string('guardian_name')->nullable();
+            $table->string('guardian_contact')->nullable();
+            $table->decimal('outstanding_balance', 10, 2)->default(0);
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

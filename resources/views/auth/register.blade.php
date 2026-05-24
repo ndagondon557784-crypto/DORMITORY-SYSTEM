@@ -3,127 +3,83 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Create Account — Barca Academy Dormitory</title>
+    <title>Register — DormMS</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <style>
+        * { font-family: 'DM Sans', sans-serif; }
+        h1,.font-display { font-family: 'Syne', sans-serif; }
+        .auth-bg { background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%); }
+        .form-input { width: 100%; padding: 11px 16px; border: 1.5px solid #e2e8f0; border-radius: 12px; font-size: 14px; outline: none; transition: all 0.2s; }
+        .form-input:focus { border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(79,70,229,0.1); }
+    </style>
 </head>
-<body class="min-h-screen bg-gradient-to-br from-[#004D98] via-[#003060] to-[#7A003C] flex items-center justify-center p-4 py-10">
-<div class="w-full max-w-xl">
-    <div class="bg-white rounded-3xl shadow-2xl overflow-hidden">
-        <div class="bg-[#004D98] px-8 py-6 text-center">
-            <div class="flex justify-center mb-3">
-                <svg width="50" height="50" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
-                    <ellipse cx="30" cy="30" rx="30" ry="30" fill="#EDBB00"/>
-                    <ellipse cx="30" cy="30" rx="24" ry="24" fill="#004D98"/>
-                    <rect x="10" y="10" width="40" height="40" rx="5" fill="#A50044"/>
-                    <text x="30" y="38" text-anchor="middle" font-family="Georgia,serif" font-weight="bold" font-size="22" fill="#EDBB00">ND</text>
-                </svg>
-            </div>
-            <h1 class="text-white font-extrabold text-lg">Barca Academy Dormitory</h1>
-            <p class="text-blue-300 text-xs mt-1">Create your student account</p>
+<body class="min-h-screen auth-bg flex items-center justify-center p-4">
+    <div class="w-full max-w-md">
+        <div class="text-center mb-8">
+            <a href="{{ route('landing') }}" class="inline-flex items-center gap-3">
+                <div class="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center">
+                    <i data-lucide="building-2" class="w-6 h-6 text-white"></i>
+                </div>
+                <span class="font-display text-2xl font-700 text-white">DormMS</span>
+            </a>
         </div>
-        <div class="px-8 py-8">
-
+        <div class="bg-white rounded-3xl shadow-2xl p-8">
+            <div class="text-center mb-8">
+                <h1 class="font-display text-3xl font-700 text-slate-900 mb-2">Create Account</h1>
+                <p class="text-slate-500">Join DormMS today</p>
+            </div>
             @if($errors->any())
-            <div class="mb-5 bg-red-50 border border-red-200 rounded-2xl px-4 py-3.5 text-sm text-red-700">
-                <p class="font-bold mb-1">Please fix these errors:</p>
-                <ul class="list-disc list-inside space-y-0.5">
-                    @foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach
-                </ul>
+            <div class="bg-red-50 border border-red-200 text-red-700 rounded-xl p-4 mb-6 text-sm">
+                @foreach($errors->all() as $e)<div class="flex items-center gap-2"><i data-lucide="alert-circle" class="w-3 h-3"></i>{{ $e }}</div>@endforeach
             </div>
             @endif
-
-            <form method="POST" action="{{ route('register') }}" class="space-y-4">
+            <form method="POST" action="{{ route('register') }}" class="space-y-5">
                 @csrf
-
                 <div>
-                    <label class="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wider">Full Name *</label>
-                    <input type="text" name="name" value="{{ old('name') }}" required placeholder="Juan dela Cruz"
-                           class="w-full px-4 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#004D98] bg-gray-50 focus:bg-white
-                                  {{ $errors->has('name') ? 'border-red-400' : 'border-gray-200' }}">
-                    @error('name')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                    <label class="block text-sm font-600 text-slate-700 mb-2">Full Name</label>
+                    <div class="relative">
+                        <i data-lucide="user" class="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2"></i>
+                        <input type="text" name="name" value="{{ old('name') }}" class="form-input pl-11" placeholder="Juan dela Cruz" required>
+                    </div>
                 </div>
-
                 <div>
-                    <label class="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wider">Email Address *</label>
-                    <input type="email" name="email" value="{{ old('email') }}" required
-                           class="w-full px-4 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#004D98] bg-gray-50 focus:bg-white
-                                  {{ $errors->has('email') ? 'border-red-400' : 'border-gray-200' }}">
-                    @error('email')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
-                </div>
-
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wider">Password *</label>
-                        <input type="password" name="password" required placeholder="Min. 8 chars"
-                               class="w-full px-4 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#004D98] bg-gray-50 focus:bg-white
-                                      {{ $errors->has('password') ? 'border-red-400' : 'border-gray-200' }}">
-                        @error('password')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wider">Confirm Password *</label>
-                        <input type="password" name="password_confirmation" required placeholder="Repeat password"
-                               class="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#004D98] bg-gray-50 focus:bg-white">
+                    <label class="block text-sm font-600 text-slate-700 mb-2">Email Address</label>
+                    <div class="relative">
+                        <i data-lucide="mail" class="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2"></i>
+                        <input type="email" name="email" value="{{ old('email') }}" class="form-input pl-11" placeholder="you@example.com" required>
                     </div>
                 </div>
-
-                <hr class="border-gray-100">
-                <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Student Information</p>
-
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wider">Student No. *</label>
-                        <input type="text" name="student_number" value="{{ old('student_number') }}" required placeholder="2024-0001"
-                               class="w-full px-4 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#004D98] bg-gray-50 focus:bg-white
-                                      {{ $errors->has('student_number') ? 'border-red-400' : 'border-gray-200' }}">
-                        @error('student_number')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wider">Course *</label>
-                        <input type="text" name="course" value="{{ old('course') }}" required placeholder="BS Computer Science"
-                               class="w-full px-4 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#004D98] bg-gray-50 focus:bg-white
-                                      {{ $errors->has('course') ? 'border-red-400' : 'border-gray-200' }}">
-                        @error('course')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                <div>
+                    <label class="block text-sm font-600 text-slate-700 mb-2">Password</label>
+                    <div class="relative">
+                        <i data-lucide="lock" class="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2"></i>
+                        <input type="password" name="password" class="form-input pl-11" placeholder="Min. 8 characters" required>
                     </div>
                 </div>
-
-                <div class="grid grid-cols-3 gap-4">
-                    <div>
-                        <label class="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wider">Year Level *</label>
-                        <select name="year_level" class="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#004D98] bg-gray-50">
-                            @foreach(range(1,6) as $y)
-                                <option value="{{ $y }}" {{ old('year_level')==$y?'selected':'' }}>Year {{ $y }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wider">Gender *</label>
-                        <select name="gender" class="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#004D98] bg-gray-50">
-                            <option value="male"   {{ old('gender')=='male'  ?'selected':'' }}>Male</option>
-                            <option value="female" {{ old('gender')=='female'?'selected':'' }}>Female</option>
-                            <option value="other"  {{ old('gender')=='other' ?'selected':'' }}>Other</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wider">Phone</label>
-                        <input type="text" name="phone" value="{{ old('phone') }}" placeholder="09XXXXXXXXX"
-                               class="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#004D98] bg-gray-50 focus:bg-white">
+                <div>
+                    <label class="block text-sm font-600 text-slate-700 mb-2">Confirm Password</label>
+                    <div class="relative">
+                        <i data-lucide="lock" class="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2"></i>
+                        <input type="password" name="password_confirmation" class="form-input pl-11" placeholder="Repeat password" required>
                     </div>
                 </div>
-
-                <button type="submit"
-                        class="w-full py-3.5 bg-[#A50044] text-white font-extrabold rounded-xl hover:bg-[#7A003C] transition text-sm shadow-lg mt-2 active:scale-[.98]">
-                    Create My Account
+                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-600 py-3.5 rounded-xl transition-colors flex items-center justify-center gap-2">
+                    <i data-lucide="user-plus" class="w-4 h-4"></i>
+                    Create Account
                 </button>
             </form>
-
-            <p class="text-center text-sm text-gray-500 mt-5">
-                Already have an account? <a href="{{ route('login') }}" class="text-[#004D98] font-bold hover:text-[#A50044]">Sign In</a>
+            <p class="text-center text-sm text-slate-500 mt-6">
+                Already have an account? <a href="{{ route('login') }}" class="text-indigo-600 font-600 hover:underline">Sign in</a>
             </p>
         </div>
+        <p class="text-center mt-6">
+            <a href="{{ route('landing') }}" class="text-white/40 hover:text-white/70 text-sm transition-colors flex items-center justify-center gap-2">
+                <i data-lucide="arrow-left" class="w-3 h-3"></i> Back to Home
+            </a>
+        </p>
     </div>
-    <p class="text-center text-blue-300 text-xs mt-4">
-        <a href="{{ route('home') }}" class="hover:text-white">← Back to Home</a>
-    </p>
-</div>
+    <script>lucide.createIcons();</script>
 </body>
 </html>

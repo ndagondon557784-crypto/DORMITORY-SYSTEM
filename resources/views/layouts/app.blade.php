@@ -1,343 +1,238 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="h-full" x-data="{ darkMode: localStorage.getItem('darkMode') === 'true' }" :class="{ 'dark': darkMode }">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'DormMS') — DormMS</title>
-    <!-- Tailwind CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        primary: {
-                            50: '#eef2ff', 100: '#e0e7ff', 200: '#c7d2fe',
-                            300: '#a5b4fc', 400: '#818cf8', 500: '#6366f1',
-                            600: '#4f46e5', 700: '#4338ca', 800: '#3730a3',
-                            900: '#312e81',
-                        }
-                    }
-                }
-            }
-        }
-    </script>
-    <!-- Alpine.js -->
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <!-- Feather Icons -->
-    <script src="https://unpkg.com/feather-icons"></script>
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <title>{{ config('app.name', 'Dormitory Management') }}</title>
+
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        [x-cloak] { display: none !important; }
-        .sidebar-link { @apply flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200; }
-        .sidebar-link:hover { @apply bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300; }
-        .sidebar-link.active { @apply bg-primary-100 text-primary-700 font-semibold dark:bg-primary-900/50 dark:text-primary-300; }
-        .badge-success { @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400; }
-        .badge-danger { @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400; }
-        .badge-warning { @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400; }
-        .badge-info { @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400; }
-        .badge-secondary { @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300; }
-        .form-input { @apply w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 dark:text-white transition-colors; }
-        .form-label { @apply block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1; }
-        .btn-primary { @apply inline-flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2; }
-        .btn-secondary { @apply inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 text-sm font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors; }
-        .btn-danger { @apply inline-flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors; }
-        .card { @apply bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700; }
-        .stat-card { @apply card p-6 flex items-center gap-4; }
-        .table-container { @apply overflow-x-auto; }
-        .table { @apply min-w-full divide-y divide-gray-200 dark:divide-gray-700; }
-        .table thead th { @apply px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider bg-gray-50 dark:bg-gray-900/50; }
-        .table tbody tr { @apply hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors; }
-        .table tbody td { @apply px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100; }
-        .page-header { @apply flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6; }
-        .breadcrumb { @apply flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400 mb-2; }
-        .breadcrumb a { @apply hover:text-primary-600 dark:hover:text-primary-400 transition-colors; }
+        * {
+            font-family: 'Poppins', sans-serif;
+        }
 
-        /* Scrollbar */
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
-        .dark ::-webkit-scrollbar-thumb { background: #475569; }
+        :root {
+            --navy: #0f172a;
+            --royal: #1e40af;
+            --maroon: #7c2d12;
+            --gold: #fbbf24;
+            --light: #f8fafc;
+            --dark: #1e293b;
+        }
 
-        /* Sidebar transition */
-        .sidebar-transition { transition: transform 0.3s ease, width 0.3s ease; }
+        body {
+            background: linear-gradient(135deg, var(--navy) 0%, #1e3a8a 100%);
+            min-height: 100vh;
+            color: var(--dark);
+        }
+
+        .glass-effect {
+            background: rgba(248, 250, 252, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .gradient-gold {
+            background: linear-gradient(135deg, var(--royal) 0%, var(--gold) 100%);
+        }
+
+        .shadow-lg-custom {
+            box-shadow: 0 20px 25px -5px rgba(15, 23, 42, 0.2);
+        }
+
+        .transition-smooth {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .hover-lift:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 25px -5px rgba(15, 23, 42, 0.3);
+        }
     </style>
-    @stack('styles')
 </head>
-<body class="h-full bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300"
-      x-data="{ sidebarOpen: window.innerWidth >= 1024 }"
-      @resize.window="sidebarOpen = window.innerWidth >= 1024">
-
-    <div class="flex h-screen overflow-hidden">
-        <!-- Sidebar Overlay (mobile) -->
-        <div x-show="sidebarOpen && window.innerWidth < 1024"
-             x-cloak
-             @click="sidebarOpen = false"
-             class="fixed inset-0 z-20 bg-black/50 lg:hidden">
-        </div>
-
-        <!-- Sidebar -->
-        <aside x-show="sidebarOpen"
-               x-cloak
-               class="fixed lg:relative z-30 flex flex-col w-64 h-full bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 sidebar-transition flex-shrink-0"
-               x-transition:enter="transition ease-out duration-300"
-               x-transition:enter-start="-translate-x-full"
-               x-transition:enter-end="translate-x-0"
-               x-transition:leave="transition ease-in duration-300"
-               x-transition:leave-start="translate-x-0"
-               x-transition:leave-end="-translate-x-full">
-
-            <!-- Logo -->
-            <div class="flex items-center gap-3 px-6 py-5 border-b border-gray-200 dark:border-gray-700">
-                <div class="w-9 h-9 bg-primary-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
-                    </svg>
+<body class="antialiased">
+    @auth
+    <div class="flex min-h-screen">
+        <!-- Sidebar Navigation -->
+        <aside class="glass-effect w-64 hidden md:flex flex-col border-r border-slate-200">
+            <div class="p-6 border-b border-slate-200">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 gradient-gold rounded-lg flex items-center justify-center text-white font-bold text-lg">
+                        D
+                    </div>
+                    <div class="flex-1">
+                        <h1 class="text-lg font-bold text-navy">Dorm</h1>
+                        <p class="text-xs text-slate-600">Management</p>
+                    </div>
                 </div>
-                <div>
-                    <h1 class="font-bold text-gray-900 dark:text-white text-sm">DormMS</h1>
-                    <p class="text-xs text-gray-500 dark:text-gray-400">Management System</p>
-                </div>
-                <button @click="sidebarOpen = false" class="ml-auto lg:hidden text-gray-400 hover:text-gray-600">
-                    <i data-feather="x" class="w-4 h-4"></i>
-                </button>
             </div>
 
-            <!-- Navigation -->
-            <nav class="flex-1 overflow-y-auto px-3 py-4 space-y-1">
-                <a href="{{ route('admin.dashboard') }}"
-                   class="sidebar-link {{ request()->routeIs('admin.dashboard') ? 'active' : 'text-gray-600 dark:text-gray-300' }}">
-                    <i data-feather="home" class="w-4 h-4"></i>
-                    Dashboard
-                </a>
+            <nav class="flex-1 overflow-y-auto p-4 space-y-2">
+                @if(Auth::user()->isAdmin() || Auth::user()->isStaff())
+                    <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"/>
+                        </svg>
+                        Dashboard
+                    </x-nav-link>
 
-                <div class="pt-2 pb-1">
-                    <p class="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Management</p>
-                </div>
+                    <x-nav-link :href="route('students.index')" :active="request()->routeIs('students.*')">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM9 12a6 6 0 11-12 0 6 6 0 0112 0z"/>
+                        </svg>
+                        Students
+                    </x-nav-link>
 
-                <a href="{{ route('admin.dormitories.index') }}"
-                   class="sidebar-link {{ request()->routeIs('admin.dormitories*') ? 'active' : 'text-gray-600 dark:text-gray-300' }}">
-                    <i data-feather="home" class="w-4 h-4"></i>
-                    Dormitories
-                </a>
+                    <x-nav-link :href="route('rooms.index')" :active="request()->routeIs('rooms.*')">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M10.5 1.5H3a1.5 1.5 0 00-1.5 1.5v12a1.5 1.5 0 001.5 1.5h13a1.5 1.5 0 001.5-1.5V6.621a1.5 1.5 0 00-.44-1.06l-3.12-3.121A1.5 1.5 0 0013.38 1.5h-2.88z"/>
+                        </svg>
+                        Rooms
+                    </x-nav-link>
 
-                <a href="{{ route('admin.rooms.index') }}"
-                   class="sidebar-link {{ request()->routeIs('admin.rooms*') ? 'active' : 'text-gray-600 dark:text-gray-300' }}">
-                    <i data-feather="grid" class="w-4 h-4"></i>
-                    Rooms
-                </a>
+                    <x-nav-link :href="route('allocations.index')" :active="request()->routeIs('allocations.*')">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M7 3a1 1 0 000 2h6a1 1 0 000-2H7zM7 7a1 1 0 000 2h6a1 1 0 000-2H7zM7 11a1 1 0 100 2h6a1 1 0 100-2H7zM2 5a2 2 0 012-2h12a2 2 0 012 2v10a2 2 0 01-2 2H4a2 2 0 01-2-2V5z"/>
+                        </svg>
+                        Allocations
+                    </x-nav-link>
 
-                <a href="{{ route('admin.students.index') }}"
-                   class="sidebar-link {{ request()->routeIs('admin.students*') ? 'active' : 'text-gray-600 dark:text-gray-300' }}">
-                    <i data-feather="users" class="w-4 h-4"></i>
-                    Students
-                </a>
+                    <x-nav-link :href="route('payments.index')" :active="request()->routeIs('payments.*')">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z"/>
+                        </svg>
+                        Payments
+                    </x-nav-link>
 
-                <a href="{{ route('admin.allocations.index') }}"
-                   class="sidebar-link {{ request()->routeIs('admin.allocations*') ? 'active' : 'text-gray-600 dark:text-gray-300' }}">
-                    <i data-feather="key" class="w-4 h-4"></i>
-                    Allocations
-                </a>
-
-                <a href="{{ route('admin.payments.index') }}"
-                   class="sidebar-link {{ request()->routeIs('admin.payments*') ? 'active' : 'text-gray-600 dark:text-gray-300' }}">
-                    <i data-feather="credit-card" class="w-4 h-4"></i>
-                    Payments
-                </a>
-
-                @if(auth()->user()->isAdmin())
-                <div class="pt-2 pb-1">
-                    <p class="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Admin</p>
-                </div>
-
-                <a href="{{ route('admin.users.index') }}"
-                   class="sidebar-link {{ request()->routeIs('admin.users*') ? 'active' : 'text-gray-600 dark:text-gray-300' }}">
-                    <i data-feather="shield" class="w-4 h-4"></i>
-                    Users
-                </a>
+                    <x-nav-link :href="route('announcements.index')" :active="request()->routeIs('announcements.*')">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M2.5 3A1.5 1.5 0 001 4.5v.006c0 .649.413 1.199 1.5 2.742v3.752h3V7.25c1.087-1.543 1.5-2.093 1.5-2.742A1.5 1.5 0 0017.5 3h-15z"/>
+                        </svg>
+                        Announcements
+                    </x-nav-link>
                 @endif
 
-                <div class="pt-2 pb-1">
-                    <p class="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Account</p>
-                </div>
+                @if(Auth::user()->isStudent())
+                    <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"/>
+                        </svg>
+                        Dashboard
+                    </x-nav-link>
 
-                <a href="{{ route('admin.notifications.index') }}"
-                   class="sidebar-link {{ request()->routeIs('admin.notifications*') ? 'active' : 'text-gray-600 dark:text-gray-300' }}">
-                    <i data-feather="bell" class="w-4 h-4"></i>
-                    Notifications
-                    @php $unreadCount = \App\Models\Notification::where('user_id', auth()->id())->where('is_read', false)->count(); @endphp
-                    @if($unreadCount > 0)
-                        <span class="ml-auto bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                            {{ $unreadCount > 9 ? '9+' : $unreadCount }}
-                        </span>
-                    @endif
-                </a>
-
-                <a href="{{ route('admin.profile') }}"
-                   class="sidebar-link {{ request()->routeIs('admin.profile') ? 'active' : 'text-gray-600 dark:text-gray-300' }}">
-                    <i data-feather="user" class="w-4 h-4"></i>
-                    Profile
-                </a>
+                    <x-nav-link :href="route('profile.edit')" :active="request()->routeIs('profile.*')">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/>
+                        </svg>
+                        My Profile
+                    </x-nav-link>
+                @endif
             </nav>
 
-            <!-- User info -->
-            <div class="px-4 py-4 border-t border-gray-200 dark:border-gray-700">
-                <div class="flex items-center gap-3">
-                    <img src="{{ auth()->user()->avatar_url }}" alt="{{ auth()->user()->name }}"
-                         class="w-8 h-8 rounded-full object-cover">
-                    <div class="flex-1 min-w-0">
-                        <p class="text-sm font-medium text-gray-900 dark:text-white truncate">{{ auth()->user()->name }}</p>
-                        <p class="text-xs text-gray-500 dark:text-gray-400 capitalize">{{ auth()->user()->role }}</p>
+            <!-- User Profile -->
+            <div class="p-4 border-t border-slate-200">
+                <div class="flex items-center gap-3 p-3 glass-effect rounded-lg">
+                    <div class="w-10 h-10 bg-gradient-gold rounded-full flex items-center justify-center text-white font-bold">
+                        {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
                     </div>
-                    <form action="{{ route('logout') }}" method="POST">
-                        @csrf
-                        <button type="submit" class="text-gray-400 hover:text-red-500 transition-colors" title="Logout">
-                            <i data-feather="log-out" class="w-4 h-4"></i>
-                        </button>
-                    </form>
+                    <div class="flex-1 min-w-0">
+                        <p class="font-semibold text-sm text-navy truncate">{{ Auth::user()->name }}</p>
+                        <p class="text-xs text-slate-600 truncate">{{ Auth::user()->email }}</p>
+                    </div>
                 </div>
+                <form method="POST" action="{{ route('logout') }}" class="mt-3">
+                    @csrf
+                    <button type="submit" class="w-full px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-smooth">
+                        Logout
+                    </button>
+                </form>
             </div>
         </aside>
 
-        <!-- Main content -->
-        <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
-            <!-- Top bar -->
-            <header class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 sm:px-6 py-3 flex items-center gap-4 flex-shrink-0">
-                <button @click="sidebarOpen = !sidebarOpen"
-                        class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors">
-                    <i data-feather="menu" class="w-5 h-5"></i>
-                </button>
-
-                <div class="flex-1"></div>
-
-                <!-- Dark mode toggle -->
-                <button @click="darkMode = !darkMode; localStorage.setItem('darkMode', darkMode)"
-                        class="w-9 h-9 flex items-center justify-center rounded-lg text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all">
-                    <i data-feather="sun" class="w-4 h-4 dark:hidden"></i>
-                    <i data-feather="moon" class="w-4 h-4 hidden dark:block"></i>
-                </button>
-
-                <!-- Notifications -->
-                <div x-data="notificationsDropdown()" class="relative">
-                    <button @click="toggle()" class="relative w-9 h-9 flex items-center justify-center rounded-lg text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all">
-                        <i data-feather="bell" class="w-4 h-4"></i>
-                        <span x-show="count > 0" x-text="count"
-                              class="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center font-medium"></span>
-                    </button>
-
-                    <div x-show="open" x-cloak @click.outside="open = false"
-                         class="absolute right-0 top-12 w-80 card z-50 overflow-hidden shadow-lg">
-                        <div class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-                            <h3 class="text-sm font-semibold">Notifications</h3>
-                            <a href="{{ route('admin.notifications.mark-all-read') }}"
-                               onclick="event.preventDefault(); fetch(this.href, {method:'POST', headers:{'X-CSRF-TOKEN':'{{ csrf_token() }}'}}).then(() => { open = false; location.reload(); })"
-                               class="text-xs text-primary-600 hover:underline">Mark all read</a>
-                        </div>
-                        <div class="max-h-64 overflow-y-auto" id="notif-list">
-                            <template x-for="n in notifications" :key="n.id">
-                                <div class="px-4 py-3 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer"
-                                     :class="!n.is_read ? 'bg-primary-50 dark:bg-primary-900/20' : ''"
-                                     @click="markRead(n.id)">
-                                    <p class="text-sm font-medium text-gray-900 dark:text-white" x-text="n.title"></p>
-                                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2" x-text="n.message"></p>
+        <!-- Main Content -->
+        <div class="flex-1 flex flex-col">
+            <!-- Top Bar -->
+            <header class="glass-effect border-b border-slate-200 sticky top-0 z-40">
+                <div class="px-6 py-4 flex items-center justify-between">
+                    <div class="flex-1">
+                        <h2 class="text-2xl font-bold text-navy">{{ $pageTitle ?? 'Dashboard' }}</h2>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <button class="p-2 hover:bg-slate-100 rounded-lg transition-smooth">
+                            <svg class="w-6 h-6 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                            </svg>
+                        </button>
+                        <div class="relative">
+                            <button onclick="document.getElementById('user-menu').classList.toggle('hidden')" class="flex items-center gap-2 p-2 hover:bg-slate-100 rounded-lg transition-smooth">
+                                <div class="w-8 h-8 bg-gradient-gold rounded-full flex items-center justify-center text-white font-bold text-sm">
+                                    {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
                                 </div>
-                            </template>
-                            <div x-show="notifications.length === 0" class="px-4 py-6 text-center text-sm text-gray-500 dark:text-gray-400">
-                                No new notifications
+                                <svg class="w-4 h-4 text-slate-600" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                                </svg>
+                            </button>
+                            <div id="user-menu" class="hidden absolute right-0 mt-2 w-48 glass-effect rounded-lg shadow-lg py-2">
+                                <a href="{{ route('profile.edit') }}" class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 transition-smooth">Profile</a>
+                                <form method="POST" action="{{ route('logout') }}">
+                                    @csrf
+                                    <button type="submit" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-smooth">Logout</button>
+                                </form>
                             </div>
                         </div>
-                        <div class="px-4 py-2 border-t border-gray-200 dark:border-gray-700">
-                            <a href="{{ route('admin.notifications.index') }}" class="text-xs text-primary-600 hover:underline">View all notifications</a>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- User menu -->
-                <div x-data="{ open: false }" class="relative">
-                    <button @click="open = !open" class="flex items-center gap-2 rounded-lg px-2 py-1 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all">
-                        <img src="{{ auth()->user()->avatar_url }}" alt="{{ auth()->user()->name }}"
-                             class="w-7 h-7 rounded-full object-cover">
-                        <span class="text-sm font-medium hidden sm:block">{{ auth()->user()->name }}</span>
-                        <i data-feather="chevron-down" class="w-3 h-3 text-gray-400"></i>
-                    </button>
-
-                    <div x-show="open" x-cloak @click.outside="open = false"
-                         class="absolute right-0 top-12 w-48 card shadow-lg z-50 overflow-hidden py-1">
-                        <a href="{{ route('admin.profile') }}" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                            <i data-feather="user" class="w-4 h-4"></i> Profile
-                        </a>
-                        <hr class="my-1 border-gray-200 dark:border-gray-700">
-                        <form action="{{ route('logout') }}" method="POST">
-                            @csrf
-                            <button type="submit" class="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20">
-                                <i data-feather="log-out" class="w-4 h-4"></i> Logout
-                            </button>
-                        </form>
                     </div>
                 </div>
             </header>
 
-            <!-- Flash messages -->
-            @if(session('success'))
-            <div x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 4000)"
-                 class="mx-4 sm:mx-6 mt-4 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg flex items-center gap-3">
-                <i data-feather="check-circle" class="w-5 h-5 text-green-600 flex-shrink-0"></i>
-                <p class="text-sm text-green-800 dark:text-green-300">{{ session('success') }}</p>
-                <button @click="show = false" class="ml-auto text-green-600"><i data-feather="x" class="w-4 h-4"></i></button>
-            </div>
-            @endif
+            <!-- Page Content -->
+            <main class="flex-1 overflow-auto p-6">
+                @if($errors->any())
+                    <div class="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+                        <h3 class="font-semibold text-red-800 mb-2">Validation Errors</h3>
+                        <ul class="list-disc list-inside text-sm text-red-700">
+                            @foreach($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
 
-            @if(session('error'))
-            <div x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 5000)"
-                 class="mx-4 sm:mx-6 mt-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex items-center gap-3">
-                <i data-feather="alert-circle" class="w-5 h-5 text-red-600 flex-shrink-0"></i>
-                <p class="text-sm text-red-800 dark:text-red-300">{{ session('error') }}</p>
-                <button @click="show = false" class="ml-auto text-red-600"><i data-feather="x" class="w-4 h-4"></i></button>
-            </div>
-            @endif
+                @if(session('success'))
+                    <div class="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center justify-between">
+                        <p class="text-green-800 font-medium">{{ session('success') }}</p>
+                        <button onclick="this.parentElement.style.display='none'" class="text-green-600 hover:text-green-800">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                            </svg>
+                        </button>
+                    </div>
+                @endif
 
-            <!-- Page content -->
-            <main class="flex-1 overflow-y-auto px-4 sm:px-6 py-6">
-                @yield('content')
+                {{ $slot }}
             </main>
         </div>
     </div>
 
+    <!-- Mobile Menu Toggle -->
     <script>
-        feather.replace();
-
-        function notificationsDropdown() {
-            return {
-                open: false,
-                count: 0,
-                notifications: [],
-                toggle() {
-                    this.open = !this.open;
-                    if (this.open) this.load();
-                },
-                async load() {
-                    const res = await fetch('{{ route("admin.notifications.unread") }}');
-                    const data = await res.json();
-                    this.count = data.count;
-                    this.notifications = data.notifications;
-                },
-                async markRead(id) {
-                    await fetch(`/admin/notifications/${id}/read`, {
-                        method: 'POST',
-                        headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
-                    });
-                    this.load();
-                },
-                init() {
-                    this.load();
-                    setInterval(() => this.load(), 30000);
-                }
+        document.addEventListener('DOMContentLoaded', function() {
+            const userMenu = document.getElementById('user-menu');
+            if (userMenu) {
+                document.addEventListener('click', function(event) {
+                    if (!event.target.closest('[onclick*="user-menu"]')) {
+                        userMenu.classList.add('hidden');
+                    }
+                });
             }
-        }
+        });
     </script>
-    @stack('scripts')
+    @else
+        {{ $slot }}
+    @endauth
 </body>
 </html>

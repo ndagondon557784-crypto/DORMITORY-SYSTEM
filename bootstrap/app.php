@@ -11,19 +11,8 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        /*
-         * Register custom middleware aliases.
-         *
-         * This is what makes Route::middleware('admin') work.
-         * Without this registration, Laravel throws:
-         * "Target class [admin] does not exist"
-         *
-         * 'admin'   → AdminMiddleware   → checks role === 'admin'
-         * 'student' → StudentMiddleware → checks role === 'student'
-         */
         $middleware->alias([
-            'admin'   => \App\Http\Middleware\AdminMiddleware::class,
-            'student' => \App\Http\Middleware\StudentMiddleware::class,
+            'role' => \App\Http\Middleware\RoleMiddleware::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

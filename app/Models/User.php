@@ -3,44 +3,46 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, SoftDeletes;
 
     protected $fillable = [
-        'name', 'email', 'password', 'role', 'avatar', 'phone', 'is_active', 'last_login_at',
+        'name',
+        'email',
+        'password',
+        'phone',
+        'role',
+        'avatar',
+        'is_active',
     ];
 
-    protected $hidden = ['password', 'remember_token'];
-
-    protected $casts = [
-        'email_verified_at' => 'datetime',
-        'last_login_at' => 'datetime',
-        'password' => 'hashed',
-        'is_active' => 'boolean',
+    protected $hidden = [
+        'password',
+        'remember_token',
     ];
 
-    public function isAdmin(): bool
+    protected function casts(): array
     {
-        return $this->role === 'admin';
+        return [
+            'email_verified_at' => 'datetime',
+            'password' => 'hashed',
+            'is_active' => 'boolean',
+        ];
     }
 
-    public function isStaff(): bool
+    public function student()
     {
-        return $this->role === 'staff';
+        return $this->hasOne(Student::class);
     }
 
-    public function allocations()
+    public function announcements()
     {
-        return $this->hasMany(Allocation::class, 'allocated_by');
-    }
-
-    public function payments()
-    {
-        return $this->hasMany(Payment::class, 'received_by');
+        return $this->hasMany(Announcement::class);
     }
 
     public function activityLogs()
@@ -48,16 +50,18 @@ class User extends Authenticatable
         return $this->hasMany(ActivityLog::class);
     }
 
-    public function notifications()
+    public function isAdmin()
     {
-        return $this->hasMany(Notification::class);
+        return $this->role === 'admin';
     }
 
-    public function getAvatarUrlAttribute(): string
+    public function isStaff()
     {
-        if ($this->avatar) {
-            return asset('storage/' . $this->avatar);
-        }
-        return 'https://ui-avatars.com/api/?name=' . urlencode($this->name) . '&background=6366f1&color=fff&size=100';
+        return $this->role === 'staff';
+    }
+
+    public function isStudent()
+    {
+        return $this->role === 'student';
     }
 }

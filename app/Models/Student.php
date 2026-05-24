@@ -3,32 +3,39 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Model;
 
 class Student extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'student_id', 'first_name', 'last_name', 'email', 'phone',
-        'date_of_birth', 'gender', 'course', 'year_level',
-        'home_address', 'emergency_contact_name', 'emergency_contact_phone',
-        'emergency_contact_relation', 'avatar', 'status', 'notes',
+        'user_id',
+        'student_id',
+        'course',
+        'year',
+        'phone',
+        'date_of_birth',
+        'address',
+        'guardian_name',
+        'guardian_contact',
+        'outstanding_balance',
     ];
 
     protected $casts = [
         'date_of_birth' => 'date',
-        'year_level' => 'integer',
+        'outstanding_balance' => 'decimal:2',
     ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 
     public function allocations()
     {
         return $this->hasMany(Allocation::class);
-    }
-
-    public function activeAllocation()
-    {
-        return $this->hasOne(Allocation::class)->where('status', 'active')->latest();
     }
 
     public function payments()
@@ -36,38 +43,15 @@ class Student extends Model
         return $this->hasMany(Payment::class);
     }
 
-    public function getFullNameAttribute(): string
+    public function currentAllocation()
     {
-        return "{$this->first_name} {$this->last_name}";
+        return $this->hasOne(Allocation::class)
+            ->where('status', 'active')
+            ->latest('check_in_date');
     }
 
-    public function getAvatarUrlAttribute(): string
+    public function getTotalPaidAttribute()
     {
-        if ($this->avatar) {
-            return asset('storage/' . $this->avatar);
-        }
-        $bg = $this->gender === 'female' ? 'ec4899' : '6366f1';
-        return 'https://ui-avatars.com/api/?name=' . urlencode($this->full_name) . "&background={$bg}&color=fff&size=100";
-    }
-
-    public function getCurrentRoomAttribute()
-    {
-        return $this->activeAllocation?->room;
-    }
-
-    public function getTotalPaidAttribute(): float
-    {
-        return $this->payments()->where('status', 'paid')->sum('amount');
-    }
-
-    public function getStatusBadgeAttribute(): string
-    {
-        return match($this->status) {
-            'active' => 'badge-success',
-            'inactive' => 'badge-secondary',
-            'graduated' => 'badge-info',
-            'suspended' => 'badge-danger',
-            default => 'badge-secondary',
-        };
+        return $this->payments()->where('status', 'completed')->sum('amount');
     }
 }
