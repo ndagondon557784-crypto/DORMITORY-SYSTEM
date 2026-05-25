@@ -1,130 +1,331 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login — DormíPro</title>
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Login — DormSystem ND</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
     <style>
-        body { font-family: 'Inter', sans-serif; }
-        .barca-bg {
-            background: linear-gradient(135deg, #0a1628 0%, #004d98 50%, #a50044 100%);
+        :root {
+            --primary: #004D98;
+            --secondary: #A50044;
+            --gold: #EDBB00;
+            --dark: #0a1628;
+            --surface: #0f1f3d;
+            --card: #162447;
+            --border: #1e3560;
+        }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background: var(--dark);
             min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Inter', system-ui, sans-serif;
+            padding: 24px 16px;
+            position: relative;
+            overflow-x: hidden;
         }
-        .glass-card {
-            background: rgba(255,255,255,0.08);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255,255,255,0.15);
+        body::before {
+            content: '';
+            position: fixed;
+            top: -200px; right: -200px;
+            width: 500px; height: 500px;
+            background: var(--primary);
+            border-radius: 50%;
+            opacity: .07;
+            filter: blur(80px);
+            pointer-events: none;
         }
-        .form-input {
+        body::after {
+            content: '';
+            position: fixed;
+            bottom: -200px; left: -200px;
+            width: 500px; height: 500px;
+            background: var(--secondary);
+            border-radius: 50%;
+            opacity: .07;
+            filter: blur(80px);
+            pointer-events: none;
+        }
+        .auth-wrapper {
+            position: relative;
+            z-index: 1;
             width: 100%;
-            padding: 0.75rem 1rem;
-            border-radius: 0.75rem;
-            border: 1px solid rgba(255,255,255,0.2);
-            background: rgba(255,255,255,0.08);
-            color: white;
-            font-size: 0.875rem;
-            outline: none;
-            transition: all 0.2s;
+            max-width: 440px;
         }
-        .form-input::placeholder { color: rgba(255,255,255,0.4); }
-        .form-input:focus { border-color: #edbb00; box-shadow: 0 0 0 3px rgba(237,187,0,0.2); }
-        .btn-login {
+        .brand-logo {
+            width: 64px; height: 64px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 16px;
+            box-shadow: 0 8px 32px rgba(0,77,152,.3);
+        }
+        .auth-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 36px;
+        }
+        .form-label {
+            font-size: 12px;
+            font-weight: 500;
+            color: #94a3b8;
+            margin-bottom: 6px;
+            display: block;
+        }
+        .form-control {
+            background: var(--surface) !important;
+            border: 1px solid var(--border) !important;
+            color: #fff !important;
+            border-radius: 10px !important;
+            padding: 10px 14px 10px 38px !important;
+            font-size: 14px !important;
+            transition: border-color .2s, box-shadow .2s !important;
             width: 100%;
-            padding: 0.75rem;
-            border-radius: 0.75rem;
-            font-weight: 700;
-            font-size: 0.9rem;
-            letter-spacing: 0.05em;
+        }
+        .form-control:focus {
+            border-color: var(--primary) !important;
+            box-shadow: 0 0 0 3px rgba(0,77,152,.2) !important;
+            outline: none !important;
+        }
+        .form-control::placeholder { color: #475569 !important; }
+        .input-wrap {
+            position: relative;
+        }
+        .input-wrap .ico {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #475569;
+            font-size: 13px;
+            pointer-events: none;
+        }
+        .input-wrap .eye-btn {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
             border: none;
+            color: #475569;
             cursor: pointer;
-            transition: all 0.2s;
-            background: linear-gradient(135deg, #edbb00, #a50044);
-            color: white;
+            font-size: 13px;
+            padding: 0;
+            line-height: 1;
+            transition: color .2s;
         }
-        .btn-login:hover { transform: translateY(-1px); box-shadow: 0 8px 25px rgba(165,0,68,0.4); }
-        .stripe-bar {
-            height: 5px;
-            background: repeating-linear-gradient(90deg, #a50044 0px, #a50044 33%, #004d98 33%, #004d98 66%, #edbb00 66%, #edbb00 100%);
-            border-radius: 999px;
+        .input-wrap .eye-btn:hover { color: #94a3b8; }
+        .btn-auth {
+            width: 100%;
+            padding: 11px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border: none;
+            border-radius: 10px;
+            color: #fff;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity .2s, transform .1s;
+            letter-spacing: .3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
-        @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
-        .logo-badge { animation: float 3s ease-in-out infinite; }
+        .btn-auth:hover { opacity: .9; transform: translateY(-1px); }
+        .btn-auth:active { transform: translateY(0); }
+        .form-check-input {
+            background-color: var(--surface) !important;
+            border-color: var(--border) !important;
+            cursor: pointer;
+        }
+        .form-check-input:checked {
+            background-color: var(--primary) !important;
+            border-color: var(--primary) !important;
+        }
+        .form-check-label {
+            font-size: 13px;
+            color: #94a3b8;
+            cursor: pointer;
+        }
+        .auth-link {
+            color: #60a5fa;
+            text-decoration: none;
+            font-size: 13px;
+            transition: color .2s;
+        }
+        .auth-link:hover { color: #93c5fd; }
+        .divider {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #475569;
+            font-size: 12px;
+            margin: 20px 0;
+        }
+        .divider::before, .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border);
+        }
+        .alert-err {
+            background: rgba(239,68,68,.1);
+            border: 1px solid rgba(239,68,68,.25);
+            color: #fca5a5;
+            border-radius: 10px;
+            padding: 10px 14px;
+            font-size: 13px;
+            margin-bottom: 16px;
+        }
+        .alert-ok {
+            background: rgba(16,185,129,.1);
+            border: 1px solid rgba(16,185,129,.25);
+            color: #6ee7b7;
+            border-radius: 10px;
+            padding: 10px 14px;
+            font-size: 13px;
+            margin-bottom: 16px;
+        }
+        .demo-box {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 12px 16px;
+            margin-top: 20px;
+        }
+        .demo-box p { margin: 0; font-size: 11px; color: #475569; }
+        .demo-box p:first-child { color: #64748b; font-weight: 600; margin-bottom: 4px; }
+        .forgot-link {
+            font-size: 11px;
+            color: #60a5fa;
+            text-decoration: none;
+            transition: color .2s;
+        }
+        .forgot-link:hover { color: #93c5fd; }
     </style>
 </head>
-<body class="barca-bg flex items-center justify-center p-4">
+<body>
 
-    {{-- Background Orbs --}}
-    <div class="fixed inset-0 overflow-hidden pointer-events-none">
-        <div class="absolute -top-40 -right-40 w-96 h-96 rounded-full opacity-20 blur-3xl" style="background:#004d98"></div>
-        <div class="absolute -bottom-40 -left-40 w-96 h-96 rounded-full opacity-20 blur-3xl" style="background:#a50044"></div>
-        <div class="absolute top-1/2 left-1/2 w-64 h-64 rounded-full opacity-10 blur-3xl -translate-x-1/2 -translate-y-1/2" style="background:#edbb00"></div>
+<div class="auth-wrapper">
+
+    <div class="text-center mb-4">
+        <div class="brand-logo">
+            <i class="fa-solid fa-building fa-xl" style="color:#fff;"></i>
+        </div>
+        <h1 style="font-size:22px;font-weight:700;color:#fff;margin-bottom:4px;">DormSystem ND</h1>
+        <p style="color:#64748b;font-size:13px;margin:0;">Dormitory Room Allocation System</p>
     </div>
 
-    <div class="relative w-full max-w-md">
+    <div class="auth-card">
+        <h2 style="font-size:16px;font-weight:600;color:#fff;margin-bottom:24px;">Sign in to your account</h2>
 
-        {{-- Logo --}}
-        <div class="text-center mb-8">
-            <div class="logo-badge inline-flex items-center justify-center w-20 h-20 rounded-2xl shadow-2xl mb-4" style="background:linear-gradient(135deg,#edbb00,#a50044)">
-                <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
-                </svg>
-            </div>
-            <h1 class="text-3xl font-extrabold text-white tracking-tight">DormíPro</h1>
-            <p class="text-white/50 text-sm mt-1">Room Allocation Management System</p>
-            <div class="stripe-bar w-24 mx-auto mt-3"></div>
-        </div>
-
-        {{-- Card --}}
-        <div class="glass-card rounded-3xl p-8 shadow-2xl">
-            <h2 class="text-xl font-bold text-white mb-1">Welcome back</h2>
-            <p class="text-white/50 text-sm mb-6">Sign in to your account to continue</p>
-
-            @if($errors->any())
-            <div class="mb-4 px-4 py-3 rounded-xl bg-red-500/20 border border-red-500/30 text-red-200 text-sm">
+        @if($errors->any())
+            <div class="alert-err">
+                <i class="fa-solid fa-circle-exclamation me-1"></i>
                 {{ $errors->first() }}
             </div>
-            @endif
+        @endif
 
-            @if(session('success'))
-            <div class="mb-4 px-4 py-3 rounded-xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-200 text-sm">
+        @if(session('success'))
+            <div class="alert-ok">
+                <i class="fa-solid fa-circle-check me-1"></i>
                 {{ session('success') }}
             </div>
-            @endif
+        @endif
 
-            <form action="{{ route('login') }}" method="POST" class="space-y-4">
-                @csrf
+        <form method="POST" action="{{ route('login.post') }}" novalidate>
+            @csrf
 
-                <div>
-                    <label class="block text-white/60 text-xs font-semibold mb-1.5 uppercase tracking-wider">Email Address</label>
-                    <input type="email" name="email" value="{{ old('email') }}" required autocomplete="email"
-                        class="form-input" placeholder="your@email.com">
+            <div style="margin-bottom:16px;">
+                <label class="form-label">Email Address</label>
+                <div class="input-wrap">
+                    <i class="fa-solid fa-envelope ico"></i>
+                    <input
+                        type="email"
+                        name="email"
+                        class="form-control"
+                        placeholder="you@ndmu.edu.ph"
+                        value="{{ old('email') }}"
+                        required
+                        autocomplete="email"
+                    />
                 </div>
+            </div>
 
-                <div>
-                    <label class="block text-white/60 text-xs font-semibold mb-1.5 uppercase tracking-wider">Password</label>
-                    <input type="password" name="password" required autocomplete="current-password"
-                        class="form-input" placeholder="••••••••">
+            <div style="margin-bottom:16px;">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+                    <label class="form-label" style="margin:0;">Password</label>
+                    <a href="#" class="forgot-link">Forgot password?</a>
                 </div>
-
-                <div class="flex items-center justify-between pt-1">
-                    <label class="flex items-center gap-2 text-white/60 text-sm cursor-pointer">
-                        <input type="checkbox" name="remember" class="rounded border-white/20 bg-white/10 text-yellow-400 focus:ring-yellow-400">
-                        Remember me
-                    </label>
-                    <a href="#" class="text-yellow-400 text-sm hover:text-yellow-300 transition-colors">Forgot password?</a>
+                <div class="input-wrap">
+                    <i class="fa-solid fa-lock ico"></i>
+                    <input
+                        type="password"
+                        name="password"
+                        id="login-pass"
+                        class="form-control"
+                        placeholder="••••••••"
+                        required
+                        autocomplete="current-password"
+                    />
+                    <button type="button" class="eye-btn" onclick="togglePass('login-pass', this)">
+                        <i class="fa-solid fa-eye"></i>
+                    </button>
                 </div>
+            </div>
 
-                <button type="submit" class="btn-login mt-2">
-                    Sign In to DormíPro
-                </button>
-            </form>
+            <div style="margin-bottom:24px;">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="remember" id="remember" {{ old('remember') ? 'checked' : '' }}>
+                    <label class="form-check-label" for="remember">Remember me</label>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-auth">
+                <i class="fa-solid fa-right-to-bracket"></i> Sign In
+            </button>
+        </form>
+
+        <div class="divider">or</div>
+
+        <div class="text-center">
+            <span style="color:#64748b;font-size:13px;">Don't have an account?</span>
+            <a href="{{ route('register') }}" class="auth-link fw-semibold ms-1">Create Account</a>
         </div>
 
-        <p class="text-center text-white/30 text-xs mt-6">
-            © {{ date('Y') }} DormíPro — Dormitory Management System. All rights reserved.
-        </p>
+        <div class="demo-box">
+            <p>Demo Credentials</p>
+            <p>Admin: admin@ndmu.edu.ph / admin123</p>
+            <p>Staff: staff@ndmu.edu.ph / staff123</p>
+        </div>
     </div>
+
+    <p class="text-center mt-3" style="color:#334155;font-size:11px;">
+        © {{ date('Y') }} Notre Dame — DormSystem ND
+    </p>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+function togglePass(id, btn) {
+    const inp  = document.getElementById(id);
+    const icon = btn.querySelector('i');
+    if (inp.type === 'password') {
+        inp.type = 'text';
+        icon.className = 'fa-solid fa-eye-slash';
+    } else {
+        inp.type = 'password';
+        icon.className = 'fa-solid fa-eye';
+    }
+}
+</script>
 </body>
 </html>

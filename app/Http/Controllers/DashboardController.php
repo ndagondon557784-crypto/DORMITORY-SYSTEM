@@ -4,109 +4,70 @@ namespace App\Http\Controllers;
 
 use App\Models\Allocation;
 use App\Models\Announcement;
-use App\Models\Building;
 use App\Models\Payment;
 use App\Models\Room;
 use App\Models\Student;
-use App\Models\User;
-use Carbon\Carbon;
-use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
     public function index()
     {
+        // ── Core stats ───────────────────────────────────────────────────────
         $stats = [
-            'total_students'    => Student::where('status', 'active')->count(),
-            'total_rooms'       => Room::count(),
-            'available_rooms'   => Room::where('status', 'available')->count(),
+            'active_students'    => Student::where('status', 'active')->count(),
+            'available_rooms'    => Room::where('status', 'available')->count(),
             'active_allocations' => Allocation::where('status', 'active')->count(),
-            'total_revenue'     => Payment::where('status', 'paid')->sum('amount'),
-            'pending_payments'  => Payment::where('status', 'pending')->count(),
-            'occupancy_rate'    => $this->getOccupancyRate(),
-            'total_buildings'   => Building::where('is_active', true)->count(),
+            'pending_payments'   => Payment::whereIn('status', ['pending', 'overdue'])->count(),
         ];
 
+        // ── Occupancy rate (uses current_occupancy column from your schema) ──
+        $totalBeds     = (int) Room::sum('capacity');
+        $occupiedBeds  = (int) Room::sum('current_occupancy');
+        $occupancyRate = $totalBeds > 0
+            ? round(($occupiedBeds / $totalBeds) * 100)
+            : 0;
+
+        // ── Room list with safe fallback for current_occupancy ───────────────
+        $rooms = Room::with('building')->get()->map(function ($room) {
+            $room->current_occupancy = $room->current_occupancy ?? 0;
+            return $room;
+        });
+
+        // ── Recent activity ──────────────────────────────────────────────────
         $recentAllocations = Allocation::with(['student', 'room.building'])
             ->latest()
-            ->limit(5)
+            ->take(5)
             ->get();
 
-        $recentPayments = Payment::with('student')
+        $recentPayments = Payment::with(['student', 'allocation.room'])
             ->latest()
-            ->limit(5)
+            ->take(5)
             ->get();
 
-        $announcements = Announcement::published()
-            ->with('author')
+        $overduePayments = Payment::with('student')
+            ->where('status', 'overdue')
             ->latest()
-            ->limit(5)
             ->get();
 
-        $monthlyRevenue = $this->getMonthlyRevenue();
-        $buildingOccupancy = $this->getBuildingOccupancy();
-        $roomTypeDistribution = $this->getRoomTypeDistribution();
+        $maintenanceRooms = Room::with('building')
+            ->where('status', 'maintenance')
+            ->get();
 
-        if (auth()->user()->isStudent()) {
-            return $this->studentDashboard($stats, $announcements);
-        }
+        $announcements = Announcement::with('author')
+            ->where('is_published', true)
+            ->latest()
+            ->take(5)
+            ->get();
 
-        return view('dashboard.index', compact(
-            'stats', 'recentAllocations', 'recentPayments',
-            'announcements', 'monthlyRevenue', 'buildingOccupancy', 'roomTypeDistribution'
+        return view('dashboard', compact(
+            'stats',
+            'occupancyRate',
+            'rooms',
+            'recentAllocations',
+            'recentPayments',
+            'overduePayments',
+            'maintenanceRooms',
+            'announcements'
         ));
-    }
-
-    private function studentDashboard(array $stats, $announcements)
-    {
-        $student = auth()->user()->student;
-        $activeAllocation = $student?->activeAllocation?->load(['room.building']);
-        $payments = $student?->payments()->latest()->limit(5)->get() ?? collect();
-
-        return view('dashboard.student', compact('stats', 'announcements', 'student', 'activeAllocation', 'payments'));
-    }
-
-    private function getOccupancyRate(): float
-    {
-        $total = Room::sum('capacity');
-        $occupied = Room::sum('current_occupancy');
-        return $total > 0 ? round(($occupied / $total) * 100, 1) : 0;
-    }
-
-    private function getMonthlyRevenue(): array
-    {
-        $months = [];
-        for ($i = 5; $i >= 0; $i--) {
-            $date = Carbon::now()->subMonths($i);
-            $months[] = [
-                'month'   => $date->format('M Y'),
-                'revenue' => Payment::where('status', 'paid')
-                    ->whereYear('payment_date', $date->year)
-                    ->whereMonth('payment_date', $date->month)
-                    ->sum('amount'),
-            ];
-        }
-        return $months;
-    }
-
-    private function getBuildingOccupancy(): array
-    {
-        return Building::with('rooms')
-            ->where('is_active', true)
-            ->get()
-            ->map(fn($b) => [
-                'name'       => $b->name,
-                'capacity'   => $b->total_capacity,
-                'occupied'   => $b->current_occupancy,
-            ])
-            ->toArray();
-    }
-
-    private function getRoomTypeDistribution(): array
-    {
-        return Room::selectRaw('room_type, count(*) as count')
-            ->groupBy('room_type')
-            ->pluck('count', 'room_type')
-            ->toArray();
     }
 }

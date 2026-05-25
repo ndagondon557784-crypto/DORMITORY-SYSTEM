@@ -1,56 +1,94 @@
 @extends('layouts.app')
 @section('title', 'Announcements')
-@section('page-title', 'Announcements')
-@section('breadcrumb', 'Announcements')
-
 @section('content')
-<div class="flex items-center justify-between mb-6">
-    <h2 class="text-xl font-bold text-gray-800 dark:text-white">Announcements</h2>
-    @if(auth()->user()->isStaff())
-    <a href="{{ route('announcements.create') }}" class="btn-primary">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-        Post Announcement
-    </a>
+
+<div style="display:flex;flex-direction:column;gap:20px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div>
+            <h1 style="font-size:20px;font-weight:700;color:#fff;">Announcements</h1>
+            <p style="font-size:13px;color:#64748b;margin-top:2px;">{{ $announcements->total() }} announcements total</p>
+        </div>
+        <button class="btn-primary" onclick="openModal('add-announcement-modal')">
+            <i class="fa-solid fa-plus"></i> New Announcement
+        </button>
+    </div>
+
+    {{-- List --}}
+    <div style="display:flex;flex-direction:column;gap:12px;">
+        @forelse($announcements as $ann)
+        @php
+            $typeColor = match($ann->type) {
+                'urgent'      => ['bg' => 'rgba(239,68,68,.12)',  'border' => 'rgba(239,68,68,.25)',  'badge' => 'badge-error',   'dot' => '#ef4444'],
+                'maintenance' => ['bg' => 'rgba(245,158,11,.12)', 'border' => 'rgba(245,158,11,.25)', 'badge' => 'badge-warning', 'dot' => '#f59e0b'],
+                default       => ['bg' => 'rgba(59,130,246,.10)', 'border' => 'rgba(59,130,246,.20)', 'badge' => 'badge-info',    'dot' => '#60a5fa'],
+            };
+        @endphp
+        <div style="background:var(--barca-card);border:1px solid var(--barca-border);border-radius:12px;padding:20px;border-left:3px solid {{ $typeColor['dot'] }};">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;">
+                <div style="flex:1;">
+                    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+                        <span class="badge {{ $typeColor['badge'] }}" style="text-transform:capitalize;">{{ $ann->type }}</span>
+                        <span style="font-size:12px;color:#64748b;">{{ $ann->created_at->diffForHumans() }}</span>
+                        <span style="font-size:12px;color:#64748b;">by {{ $ann->author->name }}</span>
+                    </div>
+                    <p style="font-size:15px;font-weight:600;color:#fff;margin-bottom:6px;">{{ $ann->title }}</p>
+                    <p style="font-size:13px;color:#94a3b8;line-height:1.6;margin:0;">{{ $ann->body }}</p>
+                </div>
+                <form method="POST" action="{{ route('announcements.destroy', $ann) }}" onsubmit="return confirm('Delete this announcement?')">
+                    @csrf @method('DELETE')
+                    <button type="submit" style="padding:6px;border-radius:6px;background:none;border:none;color:#64748b;cursor:pointer;flex-shrink:0;"
+                        onmouseover="this.style.color='#f87171';this.style.background='rgba(239,68,68,.1)'"
+                        onmouseout="this.style.color='#64748b';this.style.background='none'">
+                        <i class="fa-solid fa-trash" style="font-size:13px;"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+        @empty
+        <div style="text-align:center;padding:48px;color:#475569;font-size:13px;">
+            <i class="fa-solid fa-bullhorn" style="font-size:32px;margin-bottom:12px;display:block;opacity:.3;"></i>
+            No announcements yet.
+        </div>
+        @endforelse
+    </div>
+
+    {{-- Pagination --}}
+    @if($announcements->hasPages())
+    <div>{{ $announcements->links() }}</div>
     @endif
 </div>
 
-<div class="space-y-4">
-    @forelse($announcements as $ann)
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
-        <div class="flex items-start justify-between gap-4">
-            <div class="flex items-start gap-4 flex-1">
-                <div class="w-10 h-10 rounded-xl flex items-center justify-center text-white flex-shrink-0
-                    {{ match($ann->type) { 'urgent'=>'bg-red-500', 'maintenance'=>'bg-yellow-500', 'event'=>'bg-blue-500', default=>'bg-emerald-500' } }}">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"/></svg>
-                </div>
-                <div>
-                    <div class="flex items-center gap-2 flex-wrap">
-                        <h3 class="font-semibold text-gray-800 dark:text-white">{{ $ann->title }}</h3>
-                        <span class="badge {{ match($ann->type) { 'urgent'=>'badge-red', 'maintenance'=>'badge-yellow', 'event'=>'badge-blue', default=>'badge-green' } }}">
-                            {{ ucfirst($ann->type) }}
-                        </span>
-                    </div>
-                    <p class="text-sm text-gray-600 dark:text-gray-300 mt-2 leading-relaxed">{{ $ann->content }}</p>
-                    <p class="text-xs text-gray-400 mt-3">Posted by {{ $ann->author->name }} · {{ $ann->created_at->diffForHumans() }}</p>
-                </div>
-            </div>
-            @if(auth()->user()->isStaff())
-            <div class="flex gap-2 flex-shrink-0">
-                <a href="{{ route('announcements.edit', $ann) }}" class="text-xs text-blue-600 hover:underline">Edit</a>
-                <form action="{{ route('announcements.destroy', $ann) }}" method="POST" onsubmit="return confirm('Delete?')">
-                    @csrf @method('DELETE')
-                    <button class="text-xs text-red-500 hover:text-red-700">Delete</button>
-                </form>
-            </div>
-            @endif
+{{-- Add Modal --}}
+<div id="add-announcement-modal" class="modal-overlay" style="display:none;">
+    <div class="modal-box">
+        <div style="padding:16px 24px;border-bottom:1px solid var(--barca-border);display:flex;align-items:center;justify-content:space-between;">
+            <h2 style="font-size:15px;font-weight:600;color:#fff;">New Announcement</h2>
+            <button onclick="closeModal('add-announcement-modal')" style="background:none;border:none;color:#64748b;cursor:pointer;font-size:18px;">&times;</button>
         </div>
+        <form method="POST" action="{{ route('announcements.store') }}" style="padding:24px;display:flex;flex-direction:column;gap:16px;">
+            @csrf
+            <div>
+                <label style="display:block;font-size:12px;font-weight:500;color:#94a3b8;margin-bottom:6px;">Title *</label>
+                <input type="text" name="title" required placeholder="Announcement title" class="input" />
+            </div>
+            <div>
+                <label style="display:block;font-size:12px;font-weight:500;color:#94a3b8;margin-bottom:6px;">Type *</label>
+                <select name="type" class="input">
+                    <option value="general">General</option>
+                    <option value="urgent">Urgent</option>
+                    <option value="maintenance">Maintenance</option>
+                </select>
+            </div>
+            <div>
+                <label style="display:block;font-size:12px;font-weight:500;color:#94a3b8;margin-bottom:6px;">Message *</label>
+                <textarea name="body" required rows="4" placeholder="Write your announcement here..." class="input" style="resize:vertical;"></textarea>
+            </div>
+            <div style="display:flex;gap:12px;padding-top:4px;">
+                <button type="button" onclick="closeModal('add-announcement-modal')" class="btn-outline" style="flex:1;">Cancel</button>
+                <button type="submit" class="btn-primary" style="flex:1;justify-content:center;">Post Announcement</button>
+            </div>
+        </form>
     </div>
-    @empty
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 p-12 text-center text-gray-400">
-        No announcements yet.
-    </div>
-    @endforelse
-
-    {{ $announcements->links() }}
 </div>
+
 @endsection

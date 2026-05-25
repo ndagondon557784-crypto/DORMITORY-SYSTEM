@@ -2,58 +2,52 @@
 
 namespace App\Models;
 
-use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Schema;
 
 class User extends Authenticatable
 {
     use HasFactory, Notifiable;
 
     protected $fillable = [
-        'role_id', 'name', 'email', 'phone', 'avatar', 'password', 'is_active'
+        'name',
+        'email',
+        'password',
+        'role',
     ];
 
-    protected $hidden = ['password', 'remember_token'];
-
-    protected $casts = [
-        'email_verified_at' => 'datetime',
-        'password'          => 'hashed',
-        'is_active'         => 'boolean',
+    protected $hidden = [
+        'password',
+        'remember_token',
     ];
 
-    public function role()
+    protected function casts(): array
     {
-        return $this->belongsTo(Role::class);
+        return [
+            'email_verified_at' => 'datetime',
+            'password'          => 'hashed',
+        ];
     }
 
     public function isAdmin(): bool
     {
-        return $this->role?->name === 'admin';
+        return $this->role === 'admin';
     }
 
     public function isStaff(): bool
     {
-        return in_array($this->role?->name, ['admin', 'staff']);
+        return $this->role === 'staff';
     }
 
     public function isStudent(): bool
     {
-        return $this->role?->name === 'student';
+        return $this->role === 'student';
     }
 
-    public function student()
+    public function allocation()
     {
-        return $this->hasOne(Student::class);
-    }
-
-    public function activityLogs()
-    {
-        return $this->hasMany(ActivityLog::class);
-    }
-
-    public function announcements()
-    {
-        return $this->hasMany(Announcement::class);
+        return null;
     }
 }

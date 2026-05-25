@@ -1,85 +1,444 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Register — DormMS</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Create Account — DormSystem ND</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
     <style>
-        * { font-family: 'DM Sans', sans-serif; }
-        h1,.font-display { font-family: 'Syne', sans-serif; }
-        .auth-bg { background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%); }
-        .form-input { width: 100%; padding: 11px 16px; border: 1.5px solid #e2e8f0; border-radius: 12px; font-size: 14px; outline: none; transition: all 0.2s; }
-        .form-input:focus { border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(79,70,229,0.1); }
+        :root {
+            --primary: #004D98;
+            --secondary: #A50044;
+            --gold: #EDBB00;
+            --dark: #0a1628;
+            --surface: #0f1f3d;
+            --card: #162447;
+            --border: #1e3560;
+        }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background: var(--dark);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Inter', system-ui, sans-serif;
+            padding: 24px 16px;
+            position: relative;
+            overflow-x: hidden;
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            top: -200px; right: -200px;
+            width: 500px; height: 500px;
+            background: var(--primary);
+            border-radius: 50%;
+            opacity: .07;
+            filter: blur(80px);
+            pointer-events: none;
+        }
+        body::after {
+            content: '';
+            position: fixed;
+            bottom: -200px; left: -200px;
+            width: 500px; height: 500px;
+            background: var(--secondary);
+            border-radius: 50%;
+            opacity: .07;
+            filter: blur(80px);
+            pointer-events: none;
+        }
+        .auth-wrapper {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 460px;
+        }
+        .brand-logo {
+            width: 64px; height: 64px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 16px;
+            box-shadow: 0 8px 32px rgba(0,77,152,.3);
+        }
+        .auth-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 36px;
+        }
+        .form-label {
+            font-size: 12px;
+            font-weight: 500;
+            color: #94a3b8;
+            margin-bottom: 6px;
+            display: block;
+        }
+        .form-control {
+            background: var(--surface) !important;
+            border: 1px solid var(--border) !important;
+            color: #fff !important;
+            border-radius: 10px !important;
+            padding: 10px 14px 10px 38px !important;
+            font-size: 14px !important;
+            transition: border-color .2s, box-shadow .2s !important;
+            width: 100%;
+        }
+        .form-control:focus {
+            border-color: var(--primary) !important;
+            box-shadow: 0 0 0 3px rgba(0,77,152,.2) !important;
+            outline: none !important;
+        }
+        .form-control::placeholder { color: #475569 !important; }
+        .form-control.is-invalid { border-color: #ef4444 !important; }
+        .field-error {
+            font-size: 11px;
+            color: #f87171;
+            margin-top: 4px;
+            display: block;
+        }
+        .input-wrap { position: relative; }
+        .input-wrap .ico {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #475569;
+            font-size: 13px;
+            pointer-events: none;
+        }
+        .input-wrap .eye-btn {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #475569;
+            cursor: pointer;
+            font-size: 13px;
+            padding: 0;
+            line-height: 1;
+            transition: color .2s;
+        }
+        .input-wrap .eye-btn:hover { color: #94a3b8; }
+        .btn-auth {
+            width: 100%;
+            padding: 11px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border: none;
+            border-radius: 10px;
+            color: #fff;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity .2s, transform .1s;
+            letter-spacing: .3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .btn-auth:hover { opacity: .9; transform: translateY(-1px); }
+        .btn-auth:active { transform: translateY(0); }
+        .auth-link {
+            color: #60a5fa;
+            text-decoration: none;
+            font-size: 13px;
+            transition: color .2s;
+        }
+        .auth-link:hover { color: #93c5fd; }
+        .divider {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #475569;
+            font-size: 12px;
+            margin: 20px 0;
+        }
+        .divider::before, .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border);
+        }
+        .alert-err {
+            background: rgba(239,68,68,.1);
+            border: 1px solid rgba(239,68,68,.25);
+            color: #fca5a5;
+            border-radius: 10px;
+            padding: 10px 14px;
+            font-size: 13px;
+            margin-bottom: 16px;
+        }
+        .strength-bar {
+            height: 3px;
+            background: var(--border);
+            border-radius: 999px;
+            overflow: hidden;
+            margin-top: 6px;
+        }
+        .strength-fill {
+            height: 100%;
+            border-radius: 999px;
+            transition: width .3s, background .3s;
+            width: 0;
+        }
+        .strength-text {
+            font-size: 10px;
+            color: #475569;
+            margin-top: 3px;
+            display: block;
+        }
+        .req-list {
+            list-style: none;
+            padding: 6px 0 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+        .req-list li {
+            font-size: 11px;
+            color: #475569;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: color .2s;
+        }
+        .req-list li.met { color: #34d399; }
+        .match-msg {
+            font-size: 11px;
+            margin-top: 4px;
+            display: none;
+        }
     </style>
 </head>
-<body class="min-h-screen auth-bg flex items-center justify-center p-4">
-    <div class="w-full max-w-md">
-        <div class="text-center mb-8">
-            <a href="{{ route('landing') }}" class="inline-flex items-center gap-3">
-                <div class="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center">
-                    <i data-lucide="building-2" class="w-6 h-6 text-white"></i>
-                </div>
-                <span class="font-display text-2xl font-700 text-white">DormMS</span>
-            </a>
+<body>
+
+<div class="auth-wrapper">
+
+    <div class="text-center mb-4">
+        <div class="brand-logo">
+            <i class="fa-solid fa-building fa-xl" style="color:#fff;"></i>
         </div>
-        <div class="bg-white rounded-3xl shadow-2xl p-8">
-            <div class="text-center mb-8">
-                <h1 class="font-display text-3xl font-700 text-slate-900 mb-2">Create Account</h1>
-                <p class="text-slate-500">Join DormMS today</p>
-            </div>
-            @if($errors->any())
-            <div class="bg-red-50 border border-red-200 text-red-700 rounded-xl p-4 mb-6 text-sm">
-                @foreach($errors->all() as $e)<div class="flex items-center gap-2"><i data-lucide="alert-circle" class="w-3 h-3"></i>{{ $e }}</div>@endforeach
-            </div>
-            @endif
-            <form method="POST" action="{{ route('register') }}" class="space-y-5">
-                @csrf
-                <div>
-                    <label class="block text-sm font-600 text-slate-700 mb-2">Full Name</label>
-                    <div class="relative">
-                        <i data-lucide="user" class="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2"></i>
-                        <input type="text" name="name" value="{{ old('name') }}" class="form-input pl-11" placeholder="Juan dela Cruz" required>
-                    </div>
-                </div>
-                <div>
-                    <label class="block text-sm font-600 text-slate-700 mb-2">Email Address</label>
-                    <div class="relative">
-                        <i data-lucide="mail" class="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2"></i>
-                        <input type="email" name="email" value="{{ old('email') }}" class="form-input pl-11" placeholder="you@example.com" required>
-                    </div>
-                </div>
-                <div>
-                    <label class="block text-sm font-600 text-slate-700 mb-2">Password</label>
-                    <div class="relative">
-                        <i data-lucide="lock" class="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2"></i>
-                        <input type="password" name="password" class="form-input pl-11" placeholder="Min. 8 characters" required>
-                    </div>
-                </div>
-                <div>
-                    <label class="block text-sm font-600 text-slate-700 mb-2">Confirm Password</label>
-                    <div class="relative">
-                        <i data-lucide="lock" class="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2"></i>
-                        <input type="password" name="password_confirmation" class="form-input pl-11" placeholder="Repeat password" required>
-                    </div>
-                </div>
-                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-600 py-3.5 rounded-xl transition-colors flex items-center justify-center gap-2">
-                    <i data-lucide="user-plus" class="w-4 h-4"></i>
-                    Create Account
-                </button>
-            </form>
-            <p class="text-center text-sm text-slate-500 mt-6">
-                Already have an account? <a href="{{ route('login') }}" class="text-indigo-600 font-600 hover:underline">Sign in</a>
-            </p>
-        </div>
-        <p class="text-center mt-6">
-            <a href="{{ route('landing') }}" class="text-white/40 hover:text-white/70 text-sm transition-colors flex items-center justify-center gap-2">
-                <i data-lucide="arrow-left" class="w-3 h-3"></i> Back to Home
-            </a>
-        </p>
+        <h1 style="font-size:22px;font-weight:700;color:#fff;margin-bottom:4px;">DormSystem ND</h1>
+        <p style="color:#64748b;font-size:13px;margin:0;">Create your new account</p>
     </div>
-    <script>lucide.createIcons();</script>
+
+    <div class="auth-card">
+        <h2 style="font-size:16px;font-weight:600;color:#fff;margin-bottom:24px;">Register New Account</h2>
+
+        @if($errors->any())
+            <div class="alert-err">
+                <i class="fa-solid fa-circle-exclamation me-1"></i>
+                <strong>Please fix the following:</strong>
+                <ul style="margin:6px 0 0;padding-left:16px;">
+                    @foreach($errors->all() as $error)
+                        <li style="font-size:12px;">{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
+        <form method="POST" action="{{ route('register.post') }}" novalidate>
+            @csrf
+
+            {{-- Full Name --}}
+            <div style="margin-bottom:16px;">
+                <label class="form-label">Full Name</label>
+                <div class="input-wrap">
+                    <i class="fa-solid fa-user ico"></i>
+                    <input
+                        type="text"
+                        name="name"
+                        class="form-control @error('name') is-invalid @enderror"
+                        placeholder="Juan dela Cruz"
+                        value="{{ old('name') }}"
+                        required
+                        autocomplete="name"
+                    />
+                </div>
+                @error('name')
+                    <span class="field-error"><i class="fa-solid fa-triangle-exclamation me-1"></i>{{ $message }}</span>
+                @enderror
+            </div>
+
+            {{-- Email --}}
+            <div style="margin-bottom:16px;">
+                <label class="form-label">Email Address</label>
+                <div class="input-wrap">
+                    <i class="fa-solid fa-envelope ico"></i>
+                    <input
+                        type="email"
+                        name="email"
+                        class="form-control @error('email') is-invalid @enderror"
+                        placeholder="you@ndmu.edu.ph"
+                        value="{{ old('email') }}"
+                        required
+                        autocomplete="email"
+                    />
+                </div>
+                @error('email')
+                    <span class="field-error"><i class="fa-solid fa-triangle-exclamation me-1"></i>{{ $message }}</span>
+                @enderror
+            </div>
+
+            {{-- Password --}}
+            <div style="margin-bottom:16px;">
+                <label class="form-label">Password</label>
+                <div class="input-wrap">
+                    <i class="fa-solid fa-lock ico"></i>
+                    <input
+                        type="password"
+                        name="password"
+                        id="reg-pass"
+                        class="form-control @error('password') is-invalid @enderror"
+                        placeholder="Min. 8 characters"
+                        required
+                        autocomplete="new-password"
+                        oninput="checkStrength(this.value)"
+                    />
+                    <button type="button" class="eye-btn" onclick="togglePass('reg-pass', this)">
+                        <i class="fa-solid fa-eye"></i>
+                    </button>
+                </div>
+                @error('password')
+                    <span class="field-error"><i class="fa-solid fa-triangle-exclamation me-1"></i>{{ $message }}</span>
+                @enderror
+                <div class="strength-bar"><div class="strength-fill" id="s-fill"></div></div>
+                <span class="strength-text" id="s-text">Enter a password</span>
+                <ul class="req-list" id="req-list">
+                    <li id="r-len"><i class="fa-solid fa-circle-dot" style="font-size:9px;"></i> At least 8 characters</li>
+                    <li id="r-let"><i class="fa-solid fa-circle-dot" style="font-size:9px;"></i> Contains a letter</li>
+                    <li id="r-num"><i class="fa-solid fa-circle-dot" style="font-size:9px;"></i> Contains a number</li>
+                </ul>
+            </div>
+
+            {{-- Confirm Password --}}
+            <div style="margin-bottom:24px;">
+                <label class="form-label">Confirm Password</label>
+                <div class="input-wrap">
+                    <i class="fa-solid fa-shield-halved ico"></i>
+                    <input
+                        type="password"
+                        name="password_confirmation"
+                        id="reg-confirm"
+                        class="form-control"
+                        placeholder="Re-enter your password"
+                        required
+                        autocomplete="new-password"
+                        oninput="checkMatch()"
+                    />
+                    <button type="button" class="eye-btn" onclick="togglePass('reg-confirm', this)">
+                        <i class="fa-solid fa-eye"></i>
+                    </button>
+                </div>
+                <div class="match-msg" id="match-msg"></div>
+            </div>
+
+            <button type="submit" class="btn-auth">
+                <i class="fa-solid fa-user-plus"></i> Create Account
+            </button>
+        </form>
+
+        <div class="divider">or</div>
+
+        <div class="text-center">
+            <span style="color:#64748b;font-size:13px;">Already have an account?</span>
+            <a href="{{ route('login') }}" class="auth-link fw-semibold ms-1">Sign In</a>
+        </div>
+    </div>
+
+    <p class="text-center mt-3" style="color:#334155;font-size:11px;">
+        © {{ date('Y') }} Notre Dame — DormSystem ND
+    </p>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+function togglePass(id, btn) {
+    const inp  = document.getElementById(id);
+    const icon = btn.querySelector('i');
+    if (inp.type === 'password') {
+        inp.type = 'text';
+        icon.className = 'fa-solid fa-eye-slash';
+    } else {
+        inp.type = 'password';
+        icon.className = 'fa-solid fa-eye';
+    }
+}
+
+function setReq(id, met) {
+    const li   = document.getElementById(id);
+    const icon = li.querySelector('i');
+    if (met) {
+        li.classList.add('met');
+        icon.className = 'fa-solid fa-circle-check';
+        icon.style.fontSize = '9px';
+    } else {
+        li.classList.remove('met');
+        icon.className = 'fa-solid fa-circle-dot';
+        icon.style.fontSize = '9px';
+    }
+}
+
+function checkStrength(val) {
+    const hasLen = val.length >= 8;
+    const hasLet = /[a-zA-Z]/.test(val);
+    const hasNum = /[0-9]/.test(val);
+
+    setReq('r-len', hasLen);
+    setReq('r-let', hasLet);
+    setReq('r-num', hasNum);
+
+    const score = [hasLen, hasLet, hasNum].filter(Boolean).length;
+    const fill  = document.getElementById('s-fill');
+    const text  = document.getElementById('s-text');
+
+    if (val.length === 0) {
+        fill.style.width = '0';
+        fill.style.background = 'transparent';
+        text.textContent = 'Enter a password';
+        text.style.color = '#475569';
+        return;
+    }
+
+    const levels = [
+        { pct: '25%',  bg: '#ef4444', label: 'Too weak',  color: '#f87171' },
+        { pct: '50%',  bg: '#f59e0b', label: 'Weak',      color: '#fbbf24' },
+        { pct: '75%',  bg: '#f59e0b', label: 'Fair',      color: '#fbbf24' },
+        { pct: '100%', bg: '#10b981', label: 'Strong ✓',  color: '#34d399' },
+    ];
+
+    const lv = levels[score - 1] || levels[0];
+    fill.style.width      = lv.pct;
+    fill.style.background = lv.bg;
+    text.textContent      = lv.label;
+    text.style.color      = lv.color;
+}
+
+function checkMatch() {
+    const pass    = document.getElementById('reg-pass').value;
+    const confirm = document.getElementById('reg-confirm').value;
+    const msg     = document.getElementById('match-msg');
+
+    if (confirm.length === 0) { msg.style.display = 'none'; return; }
+
+    msg.style.display = 'block';
+    if (pass === confirm) {
+        msg.textContent = '✓ Passwords match';
+        msg.style.color = '#34d399';
+    } else {
+        msg.textContent = '✗ Passwords do not match';
+        msg.style.color = '#f87171';
+    }
+}
+</script>
 </body>
 </html>

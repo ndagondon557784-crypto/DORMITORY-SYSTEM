@@ -9,13 +9,10 @@ return new class extends Migration {
     {
         Schema::create('announcements', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->string('title');
-            $table->text('content');
-            $table->enum('type', ['general', 'urgent', 'maintenance', 'event'])->default('general');
-            $table->enum('target', ['all', 'students', 'staff'])->default('all');
-            $table->boolean('is_published')->default(true);
-            $table->date('expires_at')->nullable();
+            $table->text('body');
+            $table->enum('type', ['general', 'urgent', 'maintenance'])->default('general');
+            $table->foreignId('author_id')->constrained('users')->onDelete('cascade');
             $table->timestamps();
         });
     }
