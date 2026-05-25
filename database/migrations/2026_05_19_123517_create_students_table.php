@@ -4,29 +4,24 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
-    public function up(): void
-    {
+return new class extends Migration {
+    public function up(): void {
         Schema::create('students', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->string('student_id')->unique();
-            $table->string('course');
-            $table->string('year')->nullable();
+            $table->string('name');
+            $table->string('email')->unique();
             $table->string('phone')->nullable();
-            $table->date('date_of_birth')->nullable();
-            $table->string('address')->nullable();
-            $table->string('guardian_name')->nullable();
-            $table->string('guardian_contact')->nullable();
-            $table->decimal('outstanding_balance', 10, 2)->default(0);
+            $table->string('course');
+            $table->integer('year_level')->default(1);
+            $table->enum('gender', ['Male', 'Female']);
+            $table->enum('status', ['Active', 'Inactive', 'Graduated'])->default('Active');
+            $table->string('photo')->nullable();
             $table->timestamps();
-            $table->softDeletes();
         });
     }
 
-    public function down(): void
-    {
+    public function down(): void {
         Schema::dropIfExists('students');
     }
 };

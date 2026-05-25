@@ -3,95 +3,63 @@
 namespace App\Http\Controllers;
 
 use App\Models\Room;
-use App\Models\Building;
-use App\Http\Requests\StoreRoomRequest;
-use App\Http\Requests\UpdateRoomRequest;
-use Illuminate\View\View;
-use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 
 class RoomController extends Controller
 {
-    public function index(): View
-    {
-        $rooms = Room::with('building')
-            ->paginate(15);
+    public function index(Request $request) {
+        $query = Room::withCount(['activeAllocations as occupied_count']);
 
+        if ($request->status && $request->status !== 'All') {
+            $query->where('status', $request->status);
+        }
+
+        $rooms = $query->orderBy('room_number')->get();
         return view('rooms.index', compact('rooms'));
     }
 
-    public function create(): View
-    {
-        $buildings = Building::where('is_active', true)->get();
-        return view('rooms.create', compact('buildings'));
+    public function store(Request $request) {
+        $data = $request->validate([
+            'room_number'     => 'required|string|unique:rooms',
+            'floor'           => 'required|integer|min:1',
+            'type'            => 'required|in:Single,Double,Triple,Quad',
+            'price_per_month' => 'required|numeric|min:0',
+            'amenities'       => 'nullable|array',
+            'status'          => 'required|in:Available,Full,Maintenance',
+        ]);
+
+        $capacityMap = ['Single' => 1, 'Double' => 2, 'Triple' => 3, 'Quad' => 4];
+        $data['capacity']  = $capacityMap[$data['type']];
+        $data['occupied']  = 0;
+        $data['amenities'] = json_encode($data['amenities'] ?? []);
+
+        Room::create($data);
+        return back()->with('success', 'Room added successfully.');
     }
 
-    public function store(StoreRoomRequest $request): RedirectResponse
-    {
-        Room::create($request->validated());
+    public function update(Request $request, Room $room) {
+        $data = $request->validate([
+            'room_number'     => "required|string|unique:rooms,room_number,{$room->id}",
+            'floor'           => 'required|integer|min:1',
+            'type'            => 'required|in:Single,Double,Triple,Quad',
+            'price_per_month' => 'required|numeric|min:0',
+            'amenities'       => 'nullable|array',
+            'status'          => 'required|in:Available,Full,Maintenance',
+        ]);
 
-        return redirect()->route('rooms.index')
-            ->with('success', 'Room created successfully');
+        $capacityMap = ['Single' => 1, 'Double' => 2, 'Triple' => 3, 'Quad' => 4];
+        $data['capacity']  = $capacityMap[$data['type']];
+        $data['amenities'] = json_encode($data['amenities'] ?? []);
+
+        $room->update($data);
+        return back()->with('success', 'Room updated successfully.');
     }
 
-    public function show(Room $room): View
-    {
-        $room->load('building', 'allocations');
-        return view('rooms.show', compact('room'));
-    }
-
-    public function edit(Room $room): View
-    {
-        $buildings = Building::where('is_active', true)->get();
-        return view('rooms.edit', compact('room', 'buildings'));
-    }
-
-    public function update(UpdateRoomRequest $request, Room $room): RedirectResponse
-    {
-        $room->update($request->validated());
-
-        return redirect()->route('rooms.show', $room)
-            ->with('success', 'Room updated successfully');
-    }
-
-    public function destroy(Room $room): RedirectResponse
-    {
+    public function destroy(Room $room) {
+        if ($room->activeAllocations()->count() > 0) {
+            return back()->with('error', 'Cannot delete room with active allocations.');
+        }
         $room->delete();
-
-        return redirect()->route('rooms.index')
-            ->with('success', 'Room deleted successfully');
-    }
-
-    public function search()
-    {
-        $query = request()->input('query');
-        $rooms = Room::where('room_number', 'like', "%{$query}%")
-            ->orWhereHas('building', function ($q) use ($query) {
-                $q->where('name', 'like', "%{$query}%");
-            })
-            ->with('building')
-            ->paginate(15);
-
-        return view('rooms.index', compact('rooms'));
-    }
-
-    public function availability()
-    {
-        $rooms = Room::where('is_active', true)
-            ->with('building')
-            ->get()
-            ->map(function ($room) {
-                return [
-                    'id' => $room->id,
-                    'room_number' => $room->room_number,
-                    'building' => $room->building->name,
-                    'capacity' => $room->capacity,
-                    'occupancy' => $room->current_occupancy,
-                    'available' => $room->available_spaces,
-                    'status' => $room->status,
-                    'monthly_rent' => $room->monthly_rent,
-                ];
-            });
-
-        return response()->json($rooms);
+        return back()->with('success', 'Room deleted successfully.');
     }
 }

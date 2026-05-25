@@ -1,221 +1,131 @@
 @extends('layouts.app')
-@section('title', 'Dashboard')
+@section('title','Dashboard')
 @section('content')
 
-<!-- Stats Grid -->
-<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-    @php $statCards = [
-        ['label'=>'Active Students','value'=>$stats['total_students'],'icon'=>'users','color'=>'indigo','sub'=>'enrolled'],
-        ['label'=>'Available Rooms','value'=>$stats['available_rooms'],'icon'=>'building','color'=>'green','sub'=>'of '.$stats['total_rooms'].' total'],
-        ['label'=>'Active Allocations','value'=>$stats['active_allocations'],'icon'=>'calendar-check','color'=>'blue','sub'=>$stats['pending_allocations'].' pending'],
-        ['label'=>'Monthly Revenue','value'=>'₱'.number_format($stats['monthly_revenue'],0),'icon'=>'trending-up','color'=>'amber','sub'=>'this month'],
-    ] @endphp
-    @foreach($statCards as $card)
-    <div class="stat-card">
-        <div class="flex items-start justify-between mb-4">
-            <div class="w-11 h-11 bg-{{ $card['color'] }}-100 rounded-2xl flex items-center justify-center">
-                <i data-lucide="{{ $card['icon'] }}" class="w-5 h-5 text-{{ $card['color'] }}-600"></i>
-            </div>
-        </div>
-        <div class="font-display text-2xl font-700 text-slate-900 mb-1">{{ $card['value'] }}</div>
-        <div class="text-sm font-600 text-slate-700 mb-0.5">{{ $card['label'] }}</div>
-        <div class="text-xs text-slate-400">{{ $card['sub'] }}</div>
-    </div>
-    @endforeach
-</div>
-
-<!-- Occupancy Rate Banner -->
-<div class="card mb-6 p-6 bg-gradient-to-r from-indigo-600 to-purple-600 border-0">
-    <div class="flex flex-col md:flex-row items-center justify-between gap-6">
-        <div>
-            <div class="text-indigo-200 text-sm font-600 mb-1">Overall Occupancy Rate</div>
-            <div class="font-display text-5xl font-800 text-white">{{ $occupancyRate }}%</div>
-            <div class="text-indigo-200 text-sm mt-1">{{ $stats['occupied_rooms'] }} of {{ $stats['total_rooms'] }} rooms occupied</div>
-        </div>
-        <div class="w-full md:w-64">
-            <div class="flex justify-between text-indigo-200 text-xs mb-2">
-                <span>Occupancy</span><span>{{ $occupancyRate }}%</span>
-            </div>
-            <div class="h-3 bg-indigo-800 rounded-full overflow-hidden">
-                <div class="h-full bg-white rounded-full transition-all duration-1000" style="width: {{ $occupancyRate }}%"></div>
-            </div>
-            <div class="grid grid-cols-3 gap-2 mt-4 text-center">
-                <div><div class="text-white font-700">{{ $stats['occupied_rooms'] }}</div><div class="text-indigo-200 text-xs">Occupied</div></div>
-                <div><div class="text-white font-700">{{ $stats['available_rooms'] }}</div><div class="text-indigo-200 text-xs">Available</div></div>
-                <div><div class="text-white font-700">{{ $stats['total_rooms'] - $stats['occupied_rooms'] - $stats['available_rooms'] }}</div><div class="text-indigo-200 text-xs">Other</div></div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-    <!-- Revenue Chart -->
-    <div class="card lg:col-span-2">
-        <div class="flex items-center justify-between p-6 border-b border-slate-100">
-            <div>
-                <h3 class="font-display font-700 text-slate-900">Revenue Overview</h3>
-                <p class="text-slate-400 text-sm">Monthly revenue for {{ date('Y') }}</p>
-            </div>
-            <div class="text-right">
-                <div class="text-sm text-slate-500">Total</div>
-                <div class="font-700 text-slate-900">₱{{ number_format($stats['total_revenue'], 0) }}</div>
-            </div>
-        </div>
-        <div class="p-6">
-            <canvas id="revenueChart" height="200"></canvas>
-        </div>
+<div style="display:flex;flex-direction:column;gap:24px;">
+    <div>
+        <h1 style="font-size:20px;font-weight:700;color:#fff;">Dashboard</h1>
+        <p style="font-size:13px;color:#64748b;margin-top:2px;">Welcome back, {{ auth()->user()->name }}!</p>
     </div>
 
-    <!-- Room Occupancy -->
-    <div class="card">
-        <div class="p-6 border-b border-slate-100">
-            <h3 class="font-display font-700 text-slate-900">Room Occupancy</h3>
-            <p class="text-slate-400 text-sm">Top occupied rooms</p>
-        </div>
-        <div class="p-6 space-y-4">
-            @foreach($roomOccupancy as $room)
-            <div>
-                <div class="flex justify-between items-center mb-1.5">
-                    <span class="text-sm font-600 text-slate-700">Room {{ $room->room_number }}</span>
-                    <span class="text-xs text-slate-500">{{ $room->active_allocations_count }}/{{ $room->capacity }}</span>
+    <!-- Stat cards -->
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px;" class="stats-grid">
+        @php
+        $cards = [
+            ['title'=>'Active Students','value'=>$stats['active_students'],'sub'=>'Currently enrolled','icon'=>'fa-users','color'=>'#004D98','bg'=>'rgba(0,77,152,.15)','border'=>'rgba(0,77,152,.3)'],
+            ['title'=>'Available Rooms','value'=>$stats['available_rooms'],'sub'=>'Ready for allocation','icon'=>'fa-bed','color'=>'#10b981','bg'=>'rgba(16,185,129,.15)','border'=>'rgba(16,185,129,.3)'],
+            ['title'=>'Active Allocations','value'=>$stats['active_allocations'],'sub'=>'Rooms assigned','icon'=>'fa-clipboard-list','color'=>'#EDBB00','bg'=>'rgba(237,187,0,.15)','border'=>'rgba(237,187,0,.3)'],
+            ['title'=>'Pending Payments','value'=>$stats['pending_payments'],'sub'=>'Requires attention','icon'=>'fa-credit-card','color'=>'#A50044','bg'=>'rgba(165,0,68,.15)','border'=>'rgba(165,0,68,.3)'],
+        ];
+        @endphp
+        @foreach($cards as $c)
+        <div class="card" style="padding:20px;">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;">
+                <div>
+                    <p style="font-size:11px;font-weight:500;color:#64748b;text-transform:uppercase;letter-spacing:.05em;">{{ $c['title'] }}</p>
+                    <p style="font-size:30px;font-weight:700;color:#fff;margin-top:6px;">{{ $c['value'] }}</p>
+                    <p style="font-size:11px;color:#64748b;margin-top:2px;">{{ $c['sub'] }}</p>
                 </div>
-                <div class="progress-bar">
-                    <div class="progress-fill bg-indigo-500" style="width: {{ $room->capacity > 0 ? ($room->active_allocations_count/$room->capacity)*100 : 0 }}%"></div>
+                <div style="background:{{ $c['bg'] }};border:1px solid {{ $c['border'] }};border-radius:8px;padding:10px;">
+                    <i class="fa-solid {{ $c['icon'] }}" style="color:{{ $c['color'] }};font-size:20px;"></i>
                 </div>
+            </div>
+        </div>
+        @endforeach
+    </div>
+
+    <!-- Occupancy bar -->
+    <div class="card" style="padding:20px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+            <div style="display:flex;align-items:center;gap:8px;">
+                <i class="fa-solid fa-chart-line" style="color:var(--barca-gold);"></i>
+                <span style="font-size:14px;font-weight:600;color:#fff;">Overall Occupancy Rate</span>
+            </div>
+            <span style="font-size:18px;font-weight:700;color:var(--barca-gold);">{{ $occupancyRate }}%</span>
+        </div>
+        <div style="height:10px;background:#1e3560;border-radius:999px;overflow:hidden;">
+            <div style="height:100%;width:{{ $occupancyRate }}%;background:linear-gradient(90deg,var(--barca-blue),var(--barca-maroon));border-radius:999px;transition:width .5s;"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px;">
+            @foreach($rooms as $room)
+            <div style="display:flex;align-items:center;gap:8px;">
+                <span style="font-size:11px;color:#64748b;white-space:nowrap;">Rm {{ $room->room_number }}</span>
+                <div style="flex:1;height:4px;background:#1e3560;border-radius:999px;overflow:hidden;">
+                    <div style="height:100%;width:{{ $room->capacity > 0 ? round(($room->occupied/$room->capacity)*100) : 0 }}%;background:{{ $room->status==='Full' ? 'var(--barca-maroon)' : 'var(--barca-blue)' }};border-radius:999px;"></div>
+                </div>
+                <span style="font-size:11px;color:#64748b;">{{ $room->occupied }}/{{ $room->capacity }}</span>
             </div>
             @endforeach
-            @if($roomOccupancy->isEmpty())
-            <div class="text-center text-slate-400 py-4 text-sm">No room data available</div>
-            @endif
         </div>
     </div>
+
+    <!-- Tables -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;" class="two-col">
+        <!-- Recent Allocations -->
+        <div class="card" style="overflow:hidden;">
+            <div style="padding:16px 20px;border-bottom:1px solid var(--barca-border);display:flex;align-items:center;justify-content:space-between;">
+                <span style="font-size:14px;font-weight:600;color:#fff;">Recent Allocations</span>
+                <i class="fa-solid fa-clipboard-list" style="color:#64748b;"></i>
+            </div>
+            @foreach($recentAllocations as $a)
+            <div class="table-row" style="padding:12px 20px;border-bottom:1px solid rgba(30,53,96,.5);display:flex;align-items:center;justify-content:space-between;">
+                <div>
+                    <p style="font-size:13px;font-weight:500;color:#fff;">{{ $a->student->name }}</p>
+                    <p style="font-size:11px;color:#64748b;">Room {{ $a->room->room_number }} • {{ \Carbon\Carbon::parse($a->start_date)->format('M d, Y') }}</p>
+                </div>
+                <span class="badge badge-{{ $a->status==='Active' ? 'success' : ($a->status==='Vacated' ? 'default' : 'warning') }}">{{ $a->status }}</span>
+            </div>
+            @endforeach
+        </div>
+
+        <!-- Payments -->
+        <div class="card" style="overflow:hidden;">
+            <div style="padding:16px 20px;border-bottom:1px solid var(--barca-border);display:flex;align-items:center;justify-content:space-between;">
+                <span style="font-size:14px;font-weight:600;color:#fff;">Payment Status</span>
+                <i class="fa-solid fa-credit-card" style="color:#64748b;"></i>
+            </div>
+            @foreach($recentPayments as $p)
+            <div class="table-row" style="padding:12px 20px;border-bottom:1px solid rgba(30,53,96,.5);display:flex;align-items:center;justify-content:space-between;">
+                <div>
+                    <p style="font-size:13px;font-weight:500;color:#fff;">{{ $p->student->name }}</p>
+                    <p style="font-size:11px;color:#64748b;">{{ $p->month }} {{ $p->year }} • ₱{{ number_format($p->amount,2) }}</p>
+                </div>
+                <span class="badge badge-{{ $p->status==='Paid' ? 'success' : ($p->status==='Pending' ? 'warning' : 'error') }}">{{ $p->status }}</span>
+            </div>
+            @endforeach
+        </div>
+    </div>
+
+    <!-- Alerts -->
+    @if($overduePayments->count() > 0 || $maintenanceRooms->count() > 0)
+    <div style="background:rgba(165,0,68,.08);border:1px solid rgba(165,0,68,.2);border-radius:12px;padding:20px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+            <i class="fa-solid fa-triangle-exclamation" style="color:var(--barca-maroon);"></i>
+            <span style="font-size:14px;font-weight:600;color:#fff;">Attention Required</span>
+        </div>
+        @foreach($overduePayments as $p)
+        <div style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:4px;">
+            <span style="color:#f87171;">•</span>
+            <span style="color:#cbd5e1;">{{ $p->student->name }} — overdue ₱{{ number_format($p->amount,2) }} for {{ $p->month }} {{ $p->year }}</span>
+        </div>
+        @endforeach
+        @foreach($maintenanceRooms as $r)
+        <div style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:4px;">
+            <span style="color:#fbbf24;">•</span>
+            <span style="color:#cbd5e1;">Room {{ $r->room_number }} is under maintenance</span>
+        </div>
+        @endforeach
+    </div>
+    @endif
 </div>
 
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-    <!-- Recent Allocations -->
-    <div class="card">
-        <div class="flex items-center justify-between p-6 border-b border-slate-100">
-            <div>
-                <h3 class="font-display font-700 text-slate-900">Recent Allocations</h3>
-                <p class="text-slate-400 text-sm">Latest room assignments</p>
-            </div>
-            <a href="{{ route('allocations.index') }}" class="text-indigo-600 hover:text-indigo-800 text-sm font-600">View all</a>
-        </div>
-        <div class="divide-y divide-slate-100">
-            @forelse($recentAllocations as $allocation)
-            <div class="flex items-center gap-4 p-4 hover:bg-slate-50 transition-colors">
-                <div class="w-9 h-9 bg-indigo-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                    <i data-lucide="user" class="w-4 h-4 text-indigo-600"></i>
-                </div>
-                <div class="flex-1 min-w-0">
-                    <div class="text-sm font-600 text-slate-900 truncate">{{ $allocation->student->full_name }}</div>
-                    <div class="text-xs text-slate-500">Room {{ $allocation->room->room_number }} • {{ $allocation->start_date->format('M d, Y') }}</div>
-                </div>
-                <span class="badge badge-{{ $allocation->status === 'active' ? 'success' : ($allocation->status === 'pending' ? 'warning' : 'gray') }}">
-                    {{ ucfirst($allocation->status) }}
-                </span>
-            </div>
-            @empty
-            <div class="text-center text-slate-400 py-8 text-sm">No allocations yet</div>
-            @endforelse
-        </div>
-    </div>
-
-    <!-- Recent Payments -->
-    <div class="card">
-        <div class="flex items-center justify-between p-6 border-b border-slate-100">
-            <div>
-                <h3 class="font-display font-700 text-slate-900">Recent Payments</h3>
-                <p class="text-slate-400 text-sm">Latest payment records</p>
-            </div>
-            <a href="{{ route('payments.index') }}" class="text-indigo-600 hover:text-indigo-800 text-sm font-600">View all</a>
-        </div>
-        <div class="divide-y divide-slate-100">
-            @forelse($recentPayments as $payment)
-            <div class="flex items-center gap-4 p-4 hover:bg-slate-50 transition-colors">
-                <div class="w-9 h-9 bg-green-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                    <i data-lucide="credit-card" class="w-4 h-4 text-green-600"></i>
-                </div>
-                <div class="flex-1 min-w-0">
-                    <div class="text-sm font-600 text-slate-900 truncate">{{ $payment->student->full_name }}</div>
-                    <div class="text-xs text-slate-500">{{ $payment->reference_number }} • {{ $payment->payment_date->format('M d') }}</div>
-                </div>
-                <div class="text-right">
-                    <div class="text-sm font-700 text-slate-900">₱{{ number_format($payment->total_amount, 0) }}</div>
-                    <span class="badge badge-{{ $payment->status === 'verified' ? 'success' : ($payment->status === 'pending' ? 'warning' : 'danger') }} text-xs">
-                        {{ ucfirst($payment->status) }}
-                    </span>
-                </div>
-            </div>
-            @empty
-            <div class="text-center text-slate-400 py-8 text-sm">No payments yet</div>
-            @endforelse
-        </div>
-    </div>
-</div>
-
-<!-- Activity Log -->
-<div class="card">
-    <div class="flex items-center justify-between p-6 border-b border-slate-100">
-        <div>
-            <h3 class="font-display font-700 text-slate-900">Activity Log</h3>
-            <p class="text-slate-400 text-sm">Recent system activities</p>
-        </div>
-    </div>
-    <div class="p-6">
-        <div class="space-y-4">
-            @forelse($activityLogs as $log)
-            <div class="flex items-start gap-4">
-                <div class="w-8 h-8 bg-slate-100 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <i data-lucide="activity" class="w-3.5 h-3.5 text-slate-600"></i>
-                </div>
-                <div class="flex-1">
-                    <div class="text-sm text-slate-700">{{ $log->description }}</div>
-                    <div class="flex items-center gap-2 mt-1">
-                        <span class="text-xs text-slate-400">{{ $log->user ? $log->user->name : 'System' }}</span>
-                        <span class="text-slate-300">•</span>
-                        <span class="text-xs text-slate-400">{{ $log->created_at->diffForHumans() }}</span>
-                    </div>
-                </div>
-                <span class="badge badge-gray text-xs">{{ ucfirst(str_replace('_', ' ', $log->action)) }}</span>
-            </div>
-            @empty
-            <div class="text-center text-slate-400 py-4 text-sm">No activity yet</div>
-            @endforelse
-        </div>
-    </div>
-</div>
-
-@push('scripts')
-<script>
-    const ctx = document.getElementById('revenueChart').getContext('2d');
-    const labels = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    const data = @json($chartData);
-    new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels,
-            datasets: [{
-                label: 'Revenue (₱)',
-                data,
-                backgroundColor: 'rgba(79,70,229,0.15)',
-                borderColor: '#4f46e5',
-                borderWidth: 2,
-                borderRadius: 8,
-                borderSkipped: false,
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: { legend: { display: false }, tooltip: {
-                callbacks: { label: ctx => '₱' + ctx.raw.toLocaleString() }
-            }},
-            scales: {
-                y: { beginAtZero: true, grid: { color: '#f1f5f9' }, ticks: { callback: v => '₱'+v.toLocaleString() } },
-                x: { grid: { display: false } }
-            }
-        }
-    });
-</script>
-@endpush
+<style>
+@media(min-width:768px){
+    .stats-grid{grid-template-columns:repeat(4,1fr)!important;}
+    .two-col{grid-template-columns:repeat(2,1fr)!important;}
+}
+@media(max-width:767px){
+    .two-col{grid-template-columns:1fr!important;}
+}
+</style>
 @endsection

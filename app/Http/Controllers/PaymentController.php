@@ -4,85 +4,62 @@ namespace App\Http\Controllers;
 
 use App\Models\Payment;
 use App\Models\Student;
-use App\Models\Allocation;
-use App\Http\Requests\StorePaymentRequest;
-use Illuminate\View\View;
-use Illuminate\Http\RedirectResponse;
+use App\Models\Room;
+use Illuminate\Http\Request;
 
 class PaymentController extends Controller
 {
-    public function index(): View
-    {
-        $payments = Payment::with('student.user', 'allocation')
-            ->paginate(15);
+    public function index(Request $request) {
+        $query = Payment::with(['student', 'room']);
 
-        return view('payments.index', compact('payments'));
-    }
-
-    public function create(): View
-    {
-        $students = Student::with('user', 'currentAllocation')->get();
-        return view('payments.create', compact('students'));
-    }
-
-    public function store(StorePaymentRequest $request): RedirectResponse
-    {
-        $payment = Payment::create($request->validated());
-
-        $student = $payment->student;
-        if ($student->outstanding_balance > 0) {
-            $student->outstanding_balance = max(0, $student->outstanding_balance - $payment->amount);
-            $student->save();
+        if ($request->search) {
+            $query->whereHas('student', fn($q) => $q->where('name', 'like', "%{$request->search}%"));
         }
 
-        return redirect()->route('payments.index')
-            ->with('success', 'Payment recorded successfully');
-    }
-
-    public function show(Payment $payment): View
-    {
-        $payment->load('student.user', 'allocation');
-        return view('payments.show', compact('payment'));
-    }
-
-    public function receipt(Payment $payment)
-    {
-        return view('payments.receipt', compact('payment'));
-    }
-
-    public function destroy(Payment $payment): RedirectResponse
-    {
-        $student = $payment->student;
-        if ($payment->status === 'completed') {
-            $student->outstanding_balance += $payment->amount;
-            $student->save();
+        if ($request->status && $request->status !== 'All') {
+            $query->where('status', $request->status);
         }
 
+        $payments = $query->latest()->paginate(15)->withQueryString();
+
+        $summary = [
+            'collected' => Payment::where('status', 'Paid')->sum('amount'),
+            'pending'   => Payment::where('status', 'Pending')->sum('amount'),
+            'overdue'   => Payment::where('status', 'Overdue')->sum('amount'),
+        ];
+
+        $students = Student::where('status', 'Active')->with('allocation.room')->get();
+
+        return view('payments.index', compact('payments', 'summary', 'students'));
+    }
+
+    public function store(Request $request) {
+        $request->validate([
+            'student_id' => 'required|exists:students,id',
+            'room_id'    => 'required|exists:rooms,id',
+            'amount'     => 'required|numeric|min:1',
+            'month'      => 'required|string',
+            'year'       => 'required|integer',
+            'status'     => 'required|in:Paid,Pending,Overdue',
+        ]);
+
+        $data = $request->only(['student_id', 'room_id', 'amount', 'month', 'year', 'status', 'notes']);
+        if ($data['status'] === 'Paid') {
+            $data['paid_date'] = now()->toDateString();
+        }
+
+        Payment::create($data);
+        return back()->with('success', 'Payment record added.');
+    }
+
+    public function markPaid(string $id) {
+        $payment = Payment::findOrFail($id);
+        $payment->update(['status' => 'Paid', 'paid_date' => now()->toDateString()]);
+        return back()->with('success', 'Payment marked as paid.');
+    }
+
+    public function destroy(Payment $payment) {
         $payment->delete();
-
-        return redirect()->route('payments.index')
-            ->with('success', 'Payment deleted successfully');
-    }
-
-    public function studentPayments(Student $student): View
-    {
-        $payments = $student->payments()
-            ->with('allocation')
-            ->paginate(10);
-
-        return view('payments.student-payments', compact('student', 'payments'));
-    }
-
-    public function search()
-    {
-        $query = request()->input('query');
-        $payments = Payment::whereHas('student.user', function ($q) use ($query) {
-            $q->where('name', 'like', "%{$query}%");
-        })
-            ->orWhere('reference_number', 'like', "%{$query}%")
-            ->with('student.user', 'allocation')
-            ->paginate(15);
-
-        return view('payments.index', compact('payments'));
+        return back()->with('success', 'Payment deleted.');
     }
 }

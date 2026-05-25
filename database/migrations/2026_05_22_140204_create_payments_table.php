@@ -4,27 +4,23 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
-    public function up(): void
-    {
+return new class extends Migration {
+    public function up(): void {
         Schema::create('payments', function (Blueprint $table) {
             $table->id();
             $table->foreignId('student_id')->constrained()->onDelete('cascade');
-            $table->foreignId('allocation_id')->nullable()->constrained()->onDelete('set null');
+            $table->foreignId('room_id')->constrained()->onDelete('cascade');
             $table->decimal('amount', 10, 2);
-            $table->date('payment_date');
-            $table->string('payment_method')->default('cash'); // cash, bank_transfer, online
-            $table->string('status')->default('completed'); // completed, pending, failed
-            $table->string('reference_number')->nullable();
+            $table->string('month');
+            $table->integer('year');
+            $table->enum('status', ['Paid', 'Pending', 'Overdue'])->default('Pending');
+            $table->date('paid_date')->nullable();
             $table->text('notes')->nullable();
             $table->timestamps();
-            $table->softDeletes();
         });
     }
 
-    public function down(): void
-    {
+    public function down(): void {
         Schema::dropIfExists('payments');
     }
 };

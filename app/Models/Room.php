@@ -2,55 +2,34 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Room extends Model
 {
-    use HasFactory, SoftDeletes;
-
     protected $fillable = [
-        'building_id',
-        'room_number',
-        'capacity',
-        'current_occupancy',
-        'monthly_rent',
-        'type',
-        'status',
-        'amenities',
-        'floor',
-        'is_active',
+        'room_number', 'floor', 'type', 'capacity',
+        'occupied', 'status', 'price_per_month', 'amenities'
     ];
 
-    protected $casts = [
-        'monthly_rent' => 'decimal:2',
-        'is_active' => 'boolean',
-    ];
+    protected $casts = ['amenities' => 'array'];
 
-    public function building()
-    {
-        return $this->belongsTo(Building::class);
-    }
-
-    public function allocations()
-    {
+    public function allocations(): HasMany {
         return $this->hasMany(Allocation::class);
     }
 
-    public function currentAllocations()
-    {
-        return $this->hasMany(Allocation::class)
-            ->where('status', 'active');
+    public function activeAllocations(): HasMany {
+        return $this->hasMany(Allocation::class)->where('status', 'Active');
     }
 
-    public function getAvailableSpacesAttribute()
-    {
-        return $this->capacity - $this->current_occupancy;
+    public function payments(): HasMany {
+        return $this->hasMany(Payment::class);
     }
 
-    public function isAvailable()
-    {
-        return $this->status === 'available' && $this->available_spaces > 0;
+    public function updateOccupancy(): void {
+        $count = $this->activeAllocations()->count();
+        $this->occupied = $count;
+        $this->status = $count >= $this->capacity ? 'Full' : ($this->status === 'Maintenance' ? 'Maintenance' : 'Available');
+        $this->save();
     }
 }

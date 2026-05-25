@@ -3,94 +3,67 @@
 namespace App\Http\Controllers;
 
 use App\Models\Student;
-use App\Models\User;
-use App\Http\Requests\StoreStudentRequest;
-use App\Http\Requests\UpdateStudentRequest;
-use Illuminate\View\View;
-use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class StudentController extends Controller
 {
-    public function index(): View
-    {
-        $students = Student::with('user', 'allocations')
-            ->paginate(15);
+    public function index(Request $request) {
+        $query = Student::with('allocation.room');
 
-        return view('students.index', compact('students'));
-    }
-
-    public function create(): View
-    {
-        return view('students.create');
-    }
-
-    public function store(StoreStudentRequest $request): RedirectResponse
-    {
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => bcrypt($request->password),
-            'role' => 'student',
-        ]);
-
-        Student::create([
-            'user_id' => $user->id,
-            'student_id' => $request->student_id,
-            'course' => $request->course,
-            'year' => $request->year,
-            'phone' => $request->phone,
-            'date_of_birth' => $request->date_of_birth,
-            'address' => $request->address,
-            'guardian_name' => $request->guardian_name,
-            'guardian_contact' => $request->guardian_contact,
-        ]);
-
-        return redirect()->route('students.index')
-            ->with('success', 'Student created successfully');
-    }
-
-    public function show(Student $student): View
-    {
-        $student->load('user', 'allocations', 'payments');
-        return view('students.show', compact('student'));
-    }
-
-    public function edit(Student $student): View
-    {
-        return view('students.edit', compact('student'));
-    }
-
-    public function update(UpdateStudentRequest $request, Student $student): RedirectResponse
-    {
-        $student->update($request->validated());
-
-        if ($request->has('name') || $request->has('email')) {
-            $student->user->update($request->only('name', 'email'));
+        if ($request->search) {
+            $query->where(function($q) use ($request) {
+                $q->where('name', 'like', "%{$request->search}%")
+                  ->orWhere('student_id', 'like', "%{$request->search}%")
+                  ->orWhere('course', 'like', "%{$request->search}%")
+                  ->orWhere('email', 'like', "%{$request->search}%");
+            });
         }
 
-        return redirect()->route('students.show', $student)
-            ->with('success', 'Student updated successfully');
-    }
+        if ($request->status && $request->status !== 'All') {
+            $query->where('status', $request->status);
+        }
 
-    public function destroy(Student $student): RedirectResponse
-    {
-        $student->delete();
-
-        return redirect()->route('students.index')
-            ->with('success', 'Student deleted successfully');
-    }
-
-    public function search()
-    {
-        $query = request()->input('query');
-        $students = Student::where('student_id', 'like', "%{$query}%")
-            ->orWhereHas('user', function ($q) use ($query) {
-                $q->where('name', 'like', "%{$query}%")
-                    ->orWhere('email', 'like', "%{$query}%");
-            })
-            ->with('user', 'allocations')
-            ->paginate(15);
-
+        $students = $query->latest()->paginate(15)->withQueryString();
         return view('students.index', compact('students'));
+    }
+
+    public function store(Request $request) {
+        $data = $request->validate([
+            'name'       => 'required|string|max:255',
+            'email'      => 'required|email|unique:students',
+            'phone'      => 'nullable|string|max:20',
+            'course'     => 'required|string|max:255',
+            'year_level' => 'required|integer|min:1|max:6',
+            'gender'     => 'required|in:Male,Female',
+            'status'     => 'required|in:Active,Inactive,Graduated',
+        ]);
+
+        $year = date('Y');
+        $last = Student::where('student_id', 'like', "STU-{$year}-%")->count() + 1;
+        $data['student_id'] = "STU-{$year}-" . str_pad($last, 3, '0', STR_PAD_LEFT);
+
+        Student::create($data);
+        return back()->with('success', 'Student added successfully.');
+    }
+
+    public function update(Request $request, Student $student) {
+        $data = $request->validate([
+            'name'       => 'required|string|max:255',
+            'email'      => "required|email|unique:students,email,{$student->id}",
+            'phone'      => 'nullable|string|max:20',
+            'course'     => 'required|string|max:255',
+            'year_level' => 'required|integer|min:1|max:6',
+            'gender'     => 'required|in:Male,Female',
+            'status'     => 'required|in:Active,Inactive,Graduated',
+        ]);
+
+        $student->update($data);
+        return back()->with('success', 'Student updated successfully.');
+    }
+
+    public function destroy(Student $student) {
+        $student->delete();
+        return back()->with('success', 'Student deleted successfully.');
     }
 }

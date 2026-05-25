@@ -5,137 +5,96 @@ namespace App\Http\Controllers;
 use App\Models\Allocation;
 use App\Models\Student;
 use App\Models\Room;
-use App\Http\Requests\StoreAllocationRequest;
-use App\Http\Requests\UpdateAllocationRequest;
-use Illuminate\View\View;
-use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 
 class AllocationController extends Controller
 {
-    public function index(): View
-    {
-        $allocations = Allocation::with('student.user', 'room.building')
-            ->paginate(15);
+    public function index(Request $request) {
+        $query = Allocation::with(['student', 'room']);
 
-        return view('allocations.index', compact('allocations'));
+        if ($request->search) {
+            $query->whereHas('student', fn($q) => $q->where('name', 'like', "%{$request->search}%"))
+                  ->orWhereHas('room', fn($q) => $q->where('room_number', 'like', "%{$request->search}%"));
+        }
+
+        if ($request->status && $request->status !== 'All') {
+            $query->where('status', $request->status);
+        }
+
+        $allocations       = $query->latest()->paginate(15)->withQueryString();
+        $availableRooms    = Room::where('status', 'Available')->get();
+        $unallocatedStudents = Student::where('status', 'Active')
+            ->whereDoesntHave('allocation')->get();
+
+        $stats = [
+            'active'      => Allocation::where('status', 'Active')->count(),
+            'transferred' => Allocation::where('status', 'Transferred')->count(),
+            'vacated'     => Allocation::where('status', 'Vacated')->count(),
+        ];
+
+        return view('allocations.index', compact('allocations', 'availableRooms', 'unallocatedStudents', 'stats'));
     }
 
-    public function create(): View
-    {
-        $students = Student::with('user')->get();
-        $rooms = Room::where('is_active', true)
-            ->where('status', 'available')
-            ->with('building')
-            ->get();
+    public function store(Request $request) {
+        $data = $request->validate([
+            'student_id' => 'required|exists:students,id',
+            'room_id'    => 'required|exists:rooms,id',
+            'start_date' => 'required|date',
+            'notes'      => 'nullable|string',
+        ]);
 
-        return view('allocations.create', compact('students', 'rooms'));
+        $room = Room::findOrFail($data['room_id']);
+        if ($room->occupied >= $room->capacity) {
+            return back()->with('error', 'Room is already full.');
+        }
+
+        $existing = Allocation::where('student_id', $data['student_id'])->where('status', 'Active')->first();
+        if ($existing) {
+            return back()->with('error', 'Student already has an active allocation.');
+        }
+
+        Allocation::create(array_merge($data, ['status' => 'Active']));
+        $room->updateOccupancy();
+
+        return back()->with('success', 'Student allocated successfully.');
     }
 
-    public function store(StoreAllocationRequest $request): RedirectResponse
-    {
-        $allocation = Allocation::create($request->validated());
+    public function vacate(string $id) {
+        $allocation = Allocation::findOrFail($id);
+        $allocation->update(['status' => 'Vacated', 'end_date' => now()->toDateString()]);
+        $allocation->room->updateOccupancy();
+        return back()->with('success', 'Room vacated successfully.');
+    }
 
+    public function transfer(Request $request, string $id) {
+        $request->validate(['new_room_id' => 'required|exists:rooms,id']);
+
+        $allocation = Allocation::findOrFail($id);
+        $newRoom    = Room::findOrFail($request->new_room_id);
+
+        if ($newRoom->occupied >= $newRoom->capacity) {
+            return back()->with('error', 'Target room is already full.');
+        }
+
+        $allocation->update(['status' => 'Transferred', 'end_date' => now()->toDateString()]);
+        $allocation->room->updateOccupancy();
+
+        Allocation::create([
+            'student_id' => $allocation->student_id,
+            'room_id'    => $newRoom->id,
+            'start_date' => now()->toDateString(),
+            'status'     => 'Active',
+            'notes'      => 'Transferred from Room ' . $allocation->room->room_number,
+        ]);
+
+        $newRoom->updateOccupancy();
+        return back()->with('success', 'Student transferred successfully.');
+    }
+
+    public function destroy(Allocation $allocation) {
         $room = $allocation->room;
-        $room->current_occupancy += 1;
-        if ($room->current_occupancy >= $room->capacity) {
-            $room->status = 'occupied';
-        }
-        $room->save();
-
-        $student = $allocation->student;
-        $student->outstanding_balance = $room->monthly_rent;
-        $student->save();
-
-        return redirect()->route('allocations.index')
-            ->with('success', 'Allocation created successfully');
-    }
-
-    public function show(Allocation $allocation): View
-    {
-        $allocation->load('student.user', 'room.building', 'payments');
-        return view('allocations.show', compact('allocation'));
-    }
-
-    public function edit(Allocation $allocation): View
-    {
-        $students = Student::with('user')->get();
-        $rooms = Room::where('is_active', true)->with('building')->get();
-
-        return view('allocations.edit', compact('allocation', 'students', 'rooms'));
-    }
-
-    public function update(UpdateAllocationRequest $request, Allocation $allocation): RedirectResponse
-    {
-        $oldRoom = $allocation->room;
-        $allocation->update($request->validated());
-
-        if ($allocation->room_id !== $oldRoom->id) {
-            $oldRoom->current_occupancy -= 1;
-            if ($oldRoom->current_occupancy < $oldRoom->capacity) {
-                $oldRoom->status = 'available';
-            }
-            $oldRoom->save();
-
-            $newRoom = $allocation->room;
-            $newRoom->current_occupancy += 1;
-            if ($newRoom->current_occupancy >= $newRoom->capacity) {
-                $newRoom->status = 'occupied';
-            }
-            $newRoom->save();
-        }
-
-        return redirect()->route('allocations.show', $allocation)
-            ->with('success', 'Allocation updated successfully');
-    }
-
-    public function checkout(Allocation $allocation): RedirectResponse
-    {
-        $allocation->status = 'completed';
-        $allocation->check_out_date = now()->toDateString();
-        $allocation->save();
-
-        $room = $allocation->room;
-        $room->current_occupancy -= 1;
-        if ($room->current_occupancy < $room->capacity) {
-            $room->status = 'available';
-        }
-        $room->save();
-
-        return redirect()->route('allocations.show', $allocation)
-            ->with('success', 'Student checked out successfully');
-    }
-
-    public function destroy(Allocation $allocation): RedirectResponse
-    {
-        $room = $allocation->room;
-        $room->current_occupancy -= 1;
-        if ($room->current_occupancy < $room->capacity) {
-            $room->status = 'available';
-        }
-        $room->save();
-
         $allocation->delete();
-
-        return redirect()->route('allocations.index')
-            ->with('success', 'Allocation deleted successfully');
-    }
-
-    public function search()
-    {
-        $query = request()->input('query');
-        $allocations = Allocation::whereHas('student.user', function ($q) use ($query) {
-            $q->where('name', 'like', "%{$query}%")
-                ->orWhere('email', 'like', "%{$query}%");
-        })
-            ->orWhereHas('student', function ($q) use ($query) {
-                $q->where('student_id', 'like', "%{$query}%");
-            })
-            ->orWhereHas('room', function ($q) use ($query) {
-                $q->where('room_number', 'like', "%{$query}%");
-            })
-            ->with('student.user', 'room.building')
-            ->paginate(15);
-
-        return view('allocations.index', compact('allocations'));
+        $room->updateOccupancy();
+        return back()->with('success', 'Allocation deleted.');
     }
 }

@@ -1,238 +1,162 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="en">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-
-    <title>{{ config('app.name', 'Dormitory Management') }}</title>
-
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="csrf-token" content="{{ csrf_token() }}" />
+    <title>@yield('title', 'DormSystem ND')</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
     <style>
-        * {
-            font-family: 'Poppins', sans-serif;
-        }
-
         :root {
-            --navy: #0f172a;
-            --royal: #1e40af;
-            --maroon: #7c2d12;
-            --gold: #fbbf24;
-            --light: #f8fafc;
-            --dark: #1e293b;
+            --barca-blue: #004D98;
+            --barca-maroon: #A50044;
+            --barca-gold: #EDBB00;
+            --barca-dark: #0a1628;
+            --barca-surface: #0f1f3d;
+            --barca-card: #162447;
+            --barca-border: #1e3560;
         }
-
-        body {
-            background: linear-gradient(135deg, var(--navy) 0%, #1e3a8a 100%);
-            min-height: 100vh;
-            color: var(--dark);
-        }
-
-        .glass-effect {
-            background: rgba(248, 250, 252, 0.7);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .gradient-gold {
-            background: linear-gradient(135deg, var(--royal) 0%, var(--gold) 100%);
-        }
-
-        .shadow-lg-custom {
-            box-shadow: 0 20px 25px -5px rgba(15, 23, 42, 0.2);
-        }
-
-        .transition-smooth {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .hover-lift:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 20px 25px -5px rgba(15, 23, 42, 0.3);
-        }
+        * { box-sizing: border-box; }
+        body { font-family: 'Inter', system-ui, sans-serif; background: var(--barca-dark); color: #e2e8f0; }
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-track { background: var(--barca-dark); }
+        ::-webkit-scrollbar-thumb { background: var(--barca-border); border-radius: 3px; }
+        .sidebar-link { display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:8px; font-size:14px; font-weight:500; color:#94a3b8; transition:all .2s; text-decoration:none; }
+        .sidebar-link:hover { color:#fff; background:rgba(255,255,255,.05); }
+        .sidebar-link.active { color:#fff; background:linear-gradient(135deg,var(--barca-blue),var(--barca-maroon)); box-shadow:0 2px 8px rgba(0,77,152,.4); }
+        .card { background:var(--barca-card); border:1px solid var(--barca-border); border-radius:12px; }
+        .btn-primary { background:linear-gradient(135deg,var(--barca-blue),var(--barca-maroon)); color:#fff; border:none; padding:8px 16px; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:6px; transition:opacity .2s; }
+        .btn-primary:hover { opacity:.9; }
+        .btn-outline { background:transparent; color:#94a3b8; border:1px solid var(--barca-border); padding:8px 16px; border-radius:8px; font-size:14px; font-weight:500; cursor:pointer; transition:all .2s; }
+        .btn-outline:hover { color:#fff; border-color:#fff; }
+        .input { width:100%; padding:10px 12px; background:var(--barca-surface); border:1px solid var(--barca-border); border-radius:8px; color:#fff; font-size:14px; outline:none; transition:border-color .2s; }
+        .input:focus { border-color:var(--barca-blue); }
+        .input::placeholder { color:#475569; }
+        select.input option { background:var(--barca-surface); color:#fff; }
+        .badge { display:inline-flex; align-items:center; padding:2px 8px; border-radius:6px; font-size:11px; font-weight:600; }
+        .badge-success { background:rgba(16,185,129,.15); color:#34d399; border:1px solid rgba(16,185,129,.3); }
+        .badge-warning { background:rgba(245,158,11,.15); color:#fbbf24; border:1px solid rgba(245,158,11,.3); }
+        .badge-error   { background:rgba(239,68,68,.15);  color:#f87171; border:1px solid rgba(239,68,68,.3); }
+        .badge-info    { background:rgba(59,130,246,.15); color:#60a5fa; border:1px solid rgba(59,130,246,.3); }
+        .badge-default { background:rgba(148,163,184,.15); color:#94a3b8; border:1px solid rgba(148,163,184,.3); }
+        .table-row:hover { background:rgba(255,255,255,.03); }
+        .modal-overlay { position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);z-index:50;display:flex;align-items:center;justify-content:center;padding:16px; }
+        .modal-box { background:var(--barca-card);border:1px solid var(--barca-border);border-radius:16px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto; }
+        .alert-success { background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.2);color:#34d399;padding:10px 16px;border-radius:8px;font-size:14px;margin-bottom:16px; }
+        .alert-error   { background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);color:#f87171;padding:10px 16px;border-radius:8px;font-size:14px;margin-bottom:16px; }
     </style>
+    @stack('styles')
 </head>
-<body class="antialiased">
-    @auth
-    <div class="flex min-h-screen">
-        <!-- Sidebar Navigation -->
-        <aside class="glass-effect w-64 hidden md:flex flex-col border-r border-slate-200">
-            <div class="p-6 border-b border-slate-200">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 gradient-gold rounded-lg flex items-center justify-center text-white font-bold text-lg">
-                        D
-                    </div>
-                    <div class="flex-1">
-                        <h1 class="text-lg font-bold text-navy">Dorm</h1>
-                        <p class="text-xs text-slate-600">Management</p>
-                    </div>
+<body>
+<div style="display:flex;height:100vh;overflow:hidden;">
+
+    <!-- Mobile overlay -->
+    <div id="sidebar-overlay" onclick="closeSidebar()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:20;"></div>
+
+    <!-- Sidebar -->
+    <aside id="sidebar" style="position:fixed;inset-y:0;left:0;z-index:30;width:256px;display:flex;flex-direction:column;background:var(--barca-surface);border-right:1px solid var(--barca-border);transform:translateX(-256px);transition:transform .3s;" class="lg-sidebar">
+        <!-- Logo -->
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid var(--barca-border);">
+            <div style="display:flex;align-items:center;gap:12px;">
+                <div style="width:36px;height:36px;background:var(--barca-blue);border-radius:8px;display:flex;align-items:center;justify-content:center;">
+                    <i class="fa-solid fa-building" style="color:#fff;font-size:16px;"></i>
+                </div>
+                <div>
+                    <p style="font-weight:700;color:#fff;font-size:14px;line-height:1.2;">DormSystem</p>
+                    <p style="font-size:11px;color:var(--barca-gold);">ND Campus</p>
                 </div>
             </div>
-
-            <nav class="flex-1 overflow-y-auto p-4 space-y-2">
-                @if(Auth::user()->isAdmin() || Auth::user()->isStaff())
-                    <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
-                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"/>
-                        </svg>
-                        Dashboard
-                    </x-nav-link>
-
-                    <x-nav-link :href="route('students.index')" :active="request()->routeIs('students.*')">
-                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM9 12a6 6 0 11-12 0 6 6 0 0112 0z"/>
-                        </svg>
-                        Students
-                    </x-nav-link>
-
-                    <x-nav-link :href="route('rooms.index')" :active="request()->routeIs('rooms.*')">
-                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M10.5 1.5H3a1.5 1.5 0 00-1.5 1.5v12a1.5 1.5 0 001.5 1.5h13a1.5 1.5 0 001.5-1.5V6.621a1.5 1.5 0 00-.44-1.06l-3.12-3.121A1.5 1.5 0 0013.38 1.5h-2.88z"/>
-                        </svg>
-                        Rooms
-                    </x-nav-link>
-
-                    <x-nav-link :href="route('allocations.index')" :active="request()->routeIs('allocations.*')">
-                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M7 3a1 1 0 000 2h6a1 1 0 000-2H7zM7 7a1 1 0 000 2h6a1 1 0 000-2H7zM7 11a1 1 0 100 2h6a1 1 0 100-2H7zM2 5a2 2 0 012-2h12a2 2 0 012 2v10a2 2 0 01-2 2H4a2 2 0 01-2-2V5z"/>
-                        </svg>
-                        Allocations
-                    </x-nav-link>
-
-                    <x-nav-link :href="route('payments.index')" :active="request()->routeIs('payments.*')">
-                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z"/>
-                        </svg>
-                        Payments
-                    </x-nav-link>
-
-                    <x-nav-link :href="route('announcements.index')" :active="request()->routeIs('announcements.*')">
-                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M2.5 3A1.5 1.5 0 001 4.5v.006c0 .649.413 1.199 1.5 2.742v3.752h3V7.25c1.087-1.543 1.5-2.093 1.5-2.742A1.5 1.5 0 0017.5 3h-15z"/>
-                        </svg>
-                        Announcements
-                    </x-nav-link>
-                @endif
-
-                @if(Auth::user()->isStudent())
-                    <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
-                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"/>
-                        </svg>
-                        Dashboard
-                    </x-nav-link>
-
-                    <x-nav-link :href="route('profile.edit')" :active="request()->routeIs('profile.*')">
-                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/>
-                        </svg>
-                        My Profile
-                    </x-nav-link>
-                @endif
-            </nav>
-
-            <!-- User Profile -->
-            <div class="p-4 border-t border-slate-200">
-                <div class="flex items-center gap-3 p-3 glass-effect rounded-lg">
-                    <div class="w-10 h-10 bg-gradient-gold rounded-full flex items-center justify-center text-white font-bold">
-                        {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
-                    </div>
-                    <div class="flex-1 min-w-0">
-                        <p class="font-semibold text-sm text-navy truncate">{{ Auth::user()->name }}</p>
-                        <p class="text-xs text-slate-600 truncate">{{ Auth::user()->email }}</p>
-                    </div>
-                </div>
-                <form method="POST" action="{{ route('logout') }}" class="mt-3">
-                    @csrf
-                    <button type="submit" class="w-full px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-smooth">
-                        Logout
-                    </button>
-                </form>
-            </div>
-        </aside>
-
-        <!-- Main Content -->
-        <div class="flex-1 flex flex-col">
-            <!-- Top Bar -->
-            <header class="glass-effect border-b border-slate-200 sticky top-0 z-40">
-                <div class="px-6 py-4 flex items-center justify-between">
-                    <div class="flex-1">
-                        <h2 class="text-2xl font-bold text-navy">{{ $pageTitle ?? 'Dashboard' }}</h2>
-                    </div>
-                    <div class="flex items-center gap-4">
-                        <button class="p-2 hover:bg-slate-100 rounded-lg transition-smooth">
-                            <svg class="w-6 h-6 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
-                            </svg>
-                        </button>
-                        <div class="relative">
-                            <button onclick="document.getElementById('user-menu').classList.toggle('hidden')" class="flex items-center gap-2 p-2 hover:bg-slate-100 rounded-lg transition-smooth">
-                                <div class="w-8 h-8 bg-gradient-gold rounded-full flex items-center justify-center text-white font-bold text-sm">
-                                    {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
-                                </div>
-                                <svg class="w-4 h-4 text-slate-600" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
-                                </svg>
-                            </button>
-                            <div id="user-menu" class="hidden absolute right-0 mt-2 w-48 glass-effect rounded-lg shadow-lg py-2">
-                                <a href="{{ route('profile.edit') }}" class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 transition-smooth">Profile</a>
-                                <form method="POST" action="{{ route('logout') }}">
-                                    @csrf
-                                    <button type="submit" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-smooth">Logout</button>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </header>
-
-            <!-- Page Content -->
-            <main class="flex-1 overflow-auto p-6">
-                @if($errors->any())
-                    <div class="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-                        <h3 class="font-semibold text-red-800 mb-2">Validation Errors</h3>
-                        <ul class="list-disc list-inside text-sm text-red-700">
-                            @foreach($errors->all() as $error)
-                                <li>{{ $error }}</li>
-                            @endforeach
-                        </ul>
-                    </div>
-                @endif
-
-                @if(session('success'))
-                    <div class="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center justify-between">
-                        <p class="text-green-800 font-medium">{{ session('success') }}</p>
-                        <button onclick="this.parentElement.style.display='none'" class="text-green-600 hover:text-green-800">
-                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
-                            </svg>
-                        </button>
-                    </div>
-                @endif
-
-                {{ $slot }}
-            </main>
+            <button onclick="closeSidebar()" style="background:none;border:none;color:#94a3b8;cursor:pointer;font-size:18px;" class="lg-hidden"><i class="fa-solid fa-xmark"></i></button>
         </div>
-    </div>
 
-    <!-- Mobile Menu Toggle -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const userMenu = document.getElementById('user-menu');
-            if (userMenu) {
-                document.addEventListener('click', function(event) {
-                    if (!event.target.closest('[onclick*="user-menu"]')) {
-                        userMenu.classList.add('hidden');
-                    }
-                });
-            }
-        });
-    </script>
-    @else
-        {{ $slot }}
-    @endauth
+        <!-- Nav -->
+        <nav style="flex:1;padding:16px 12px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;">
+            <a href="{{ route('dashboard') }}" class="sidebar-link {{ request()->routeIs('dashboard') ? 'active' : '' }}"><i class="fa-solid fa-gauge-high" style="width:18px;"></i> Dashboard</a>
+            <a href="{{ route('students.index') }}" class="sidebar-link {{ request()->routeIs('students.*') ? 'active' : '' }}"><i class="fa-solid fa-users" style="width:18px;"></i> Students</a>
+            <a href="{{ route('rooms.index') }}" class="sidebar-link {{ request()->routeIs('rooms.*') ? 'active' : '' }}"><i class="fa-solid fa-bed" style="width:18px;"></i> Rooms</a>
+            <a href="{{ route('allocations.index') }}" class="sidebar-link {{ request()->routeIs('allocations.*') ? 'active' : '' }}"><i class="fa-solid fa-clipboard-list" style="width:18px;"></i> Allocations</a>
+            <a href="{{ route('payments.index') }}" class="sidebar-link {{ request()->routeIs('payments.*') ? 'active' : '' }}"><i class="fa-solid fa-credit-card" style="width:18px;"></i> Payments</a>
+            <a href="{{ route('reports.index') }}" class="sidebar-link {{ request()->routeIs('reports.*') ? 'active' : '' }}"><i class="fa-solid fa-chart-bar" style="width:18px;"></i> Reports</a>
+        </nav>
+
+        <!-- Footer -->
+        <div style="padding:12px;border-top:1px solid var(--barca-border);">
+            <div style="background:var(--barca-card);border-radius:8px;padding:10px 12px;margin-bottom:8px;">
+                <p style="font-size:11px;color:#64748b;">Logged in as</p>
+                <p style="font-size:13px;font-weight:600;color:#fff;">{{ auth()->user()->name }}</p>
+                <p style="font-size:11px;color:var(--barca-gold);text-transform:capitalize;">{{ auth()->user()->role }}</p>
+            </div>
+            <form method="POST" action="{{ route('logout') }}">
+                @csrf
+                <button type="submit" class="sidebar-link" style="width:100%;border:none;cursor:pointer;background:none;color:#94a3b8;">
+                    <i class="fa-solid fa-right-from-bracket" style="width:18px;"></i> Sign Out
+                </button>
+            </form>
+        </div>
+    </aside>
+
+    <!-- Main -->
+    <div style="flex:1;display:flex;flex-direction:column;overflow:hidden;margin-left:0;" id="main-content">
+        <!-- Header -->
+        <header style="display:flex;align-items:center;justify-content:space-between;padding:12px 24px;background:var(--barca-surface);border-bottom:1px solid var(--barca-border);flex-shrink:0;">
+            <button onclick="openSidebar()" style="background:none;border:none;color:#94a3b8;cursor:pointer;font-size:20px;padding:4px;" id="menu-btn">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+            <div style="display:flex;align-items:center;gap:12px;">
+                <div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--barca-blue),var(--barca-maroon));display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;">
+                    {{ strtoupper(substr(auth()->user()->name, 0, 2)) }}
+                </div>
+                <div style="display:none;" class="md-block">
+                    <p style="font-size:13px;font-weight:600;color:#fff;line-height:1.2;">{{ auth()->user()->name }}</p>
+                    <p style="font-size:11px;color:#64748b;text-transform:capitalize;">{{ auth()->user()->role }}</p>
+                </div>
+            </div>
+        </header>
+
+        <!-- Page content -->
+        <main style="flex:1;overflow-y:auto;padding:24px;">
+            @if(session('success'))
+                <div class="alert-success"><i class="fa-solid fa-circle-check"></i> {{ session('success') }}</div>
+            @endif
+            @if(session('error'))
+                <div class="alert-error"><i class="fa-solid fa-circle-exclamation"></i> {{ session('error') }}</div>
+            @endif
+            @yield('content')
+        </main>
+    </div>
+</div>
+
+<style>
+@media(min-width:1024px){
+    #sidebar{transform:translateX(0)!important;}
+    #main-content{margin-left:256px!important;}
+    #menu-btn{display:none!important;}
+    #sidebar-overlay{display:none!important;}
+}
+@media(min-width:768px){ .md-block{display:block!important;} }
+</style>
+
+<script>
+function openSidebar(){
+    document.getElementById('sidebar').style.transform='translateX(0)';
+    document.getElementById('sidebar-overlay').style.display='block';
+}
+function closeSidebar(){
+    document.getElementById('sidebar').style.transform='translateX(-256px)';
+    document.getElementById('sidebar-overlay').style.display='none';
+}
+function openModal(id){ document.getElementById(id).style.display='flex'; }
+function closeModal(id){ document.getElementById(id).style.display='none'; }
+// Close modal on outside click
+document.addEventListener('click', function(e){
+    if(e.target.classList.contains('modal-overlay')){
+        e.target.style.display='none';
+    }
+});
+// Auto-hide alerts
+setTimeout(()=>{ document.querySelectorAll('.alert-success,.alert-error').forEach(el=>el.style.display='none'); }, 4000);
+</script>
+@stack('scripts')
 </body>
 </html>

@@ -2,56 +2,30 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Student extends Model
 {
-    use HasFactory, SoftDeletes;
-
     protected $fillable = [
-        'user_id',
-        'student_id',
-        'course',
-        'year',
-        'phone',
-        'date_of_birth',
-        'address',
-        'guardian_name',
-        'guardian_contact',
-        'outstanding_balance',
+        'student_id', 'name', 'email', 'phone',
+        'course', 'year_level', 'gender', 'status', 'photo'
     ];
 
-    protected $casts = [
-        'date_of_birth' => 'date',
-        'outstanding_balance' => 'decimal:2',
-    ];
-
-    public function user()
-    {
-        return $this->belongsTo(User::class);
+    public function allocation(): HasOne {
+        return $this->hasOne(Allocation::class)->where('status', 'Active')->latest();
     }
 
-    public function allocations()
-    {
+    public function allocations(): HasMany {
         return $this->hasMany(Allocation::class);
     }
 
-    public function payments()
-    {
+    public function payments(): HasMany {
         return $this->hasMany(Payment::class);
     }
 
-    public function currentAllocation()
-    {
-        return $this->hasOne(Allocation::class)
-            ->where('status', 'active')
-            ->latest('check_in_date');
-    }
-
-    public function getTotalPaidAttribute()
-    {
-        return $this->payments()->where('status', 'completed')->sum('amount');
+    public function currentRoom() {
+        return $this->allocation?->room;
     }
 }
