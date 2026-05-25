@@ -2,19 +2,34 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 
 class Room extends Model
 {
     use HasFactory;
 
     protected $fillable = [
-        'building_id', 'room_number', 'floor', 'room_type',
-        'capacity', 'current_occupancy', 'monthly_rate', 'status', 'amenities', 'description'
+        'building_id',
+        'room_number',
+        'floor',
+        'room_type',
+        'capacity',
+        'current_occupancy',
+        'monthly_rate',
+        'status',
+        'amenities',
+        'description',
     ];
 
-    protected $casts = ['monthly_rate' => 'decimal:2'];
+    protected $casts = [
+        'monthly_rate'      => 'decimal:2',
+        'capacity'          => 'integer',
+        'current_occupancy' => 'integer',
+        'floor'             => 'integer',
+    ];
+
+    // ── Relationships ─────────────────────────────────────────────────────────
 
     public function building()
     {
@@ -31,20 +46,41 @@ class Room extends Model
         return $this->hasMany(Allocation::class)->where('status', 'active');
     }
 
+    public function maintenanceRequests()
+    {
+        return $this->hasMany(MaintenanceRequest::class);
+    }
+
+    // ── Accessors ─────────────────────────────────────────────────────────────
+
     public function getIsAvailableAttribute(): bool
     {
-        return $this->current_occupancy < $this->capacity && $this->status !== 'maintenance';
+        return $this->current_occupancy < $this->capacity
+            && $this->status !== 'maintenance';
     }
 
     public function getOccupancyPercentageAttribute(): int
     {
-        if ($this->capacity === 0) return 0;
+        if ($this->capacity === 0) {
+            return 0;
+        }
+
         return (int) round(($this->current_occupancy / $this->capacity) * 100);
     }
 
+    public function getAvailableSlotsAttribute(): int
+    {
+        return max(0, $this->capacity - $this->current_occupancy);
+    }
+
+    // ── Methods ───────────────────────────────────────────────────────────────
+
     public function updateStatus(): void
     {
-        if ($this->status === 'maintenance') return;
+        // Never override a maintenance status
+        if ($this->status === 'maintenance') {
+            return;
+        }
 
         if ($this->current_occupancy >= $this->capacity) {
             $this->update(['status' => 'full']);

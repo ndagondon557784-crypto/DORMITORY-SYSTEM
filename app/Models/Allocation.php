@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Allocation extends Model
@@ -11,8 +11,14 @@ class Allocation extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'student_id', 'room_id', 'assigned_by', 'check_in_date',
-        'check_out_date', 'actual_check_out', 'status', 'notes'
+        'student_id',
+        'room_id',
+        'assigned_by',
+        'check_in_date',
+        'check_out_date',
+        'actual_check_out',
+        'status',
+        'notes',
     ];
 
     protected $casts = [
@@ -20,6 +26,8 @@ class Allocation extends Model
         'check_out_date'   => 'date',
         'actual_check_out' => 'date',
     ];
+
+    // ── Relationships ─────────────────────────────────────────────────────────
 
     public function student()
     {
@@ -41,9 +49,16 @@ class Allocation extends Model
         return $this->hasMany(Payment::class);
     }
 
+    // ── Accessors ─────────────────────────────────────────────────────────────
+
     public function getDurationDaysAttribute(): int
     {
         $end = $this->actual_check_out ?? now();
         return (int) $this->check_in_date->diffInDays($end);
+    }
+
+    public function getTotalPaidAttribute(): float
+    {
+        return (float) $this->payments()->where('status', 'paid')->sum('amount');
     }
 }

@@ -5,7 +5,6 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Support\Facades\Schema;
 
 class User extends Authenticatable
 {
@@ -33,21 +32,16 @@ class User extends Authenticatable
 
     public function isAdmin(): bool
     {
-        return $this->role === 'admin';
+        return ($this->role ?? '') === 'admin';
     }
 
     public function isStaff(): bool
     {
-        return $this->role === 'staff';
+        return ($this->role ?? '') === 'staff';
     }
 
     public function isStudent(): bool
     {
-        return $this->role === 'student';
-    }
-
-    public function allocation()
-    {
-        return null;
+        return ($this->role ?? '') === 'student';
     }
 }

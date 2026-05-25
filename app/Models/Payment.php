@@ -2,17 +2,26 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 
 class Payment extends Model
 {
     use HasFactory;
 
     protected $fillable = [
-        'allocation_id', 'student_id', 'reference_number', 'amount',
-        'payment_date', 'period_from', 'period_to', 'payment_method',
-        'status', 'receipt_path', 'notes', 'recorded_by'
+        'allocation_id',
+        'student_id',
+        'reference_number',
+        'amount',
+        'payment_date',
+        'period_from',
+        'period_to',
+        'payment_method',
+        'status',
+        'receipt_path',
+        'notes',
+        'recorded_by',
     ];
 
     protected $casts = [
@@ -21,6 +30,8 @@ class Payment extends Model
         'period_from'  => 'date',
         'period_to'    => 'date',
     ];
+
+    // ── Relationships ─────────────────────────────────────────────────────────
 
     public function allocation()
     {
@@ -37,11 +48,14 @@ class Payment extends Model
         return $this->belongsTo(User::class, 'recorded_by');
     }
 
+    // ── Static helpers ────────────────────────────────────────────────────────
+
     public static function generateReference(): string
     {
         do {
-            $ref = 'PAY-' . strtoupper(uniqid());
+            $ref = 'PAY-' . strtoupper(substr(md5(uniqid()), 0, 10));
         } while (self::where('reference_number', $ref)->exists());
+
         return $ref;
     }
 }

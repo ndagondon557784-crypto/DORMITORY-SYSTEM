@@ -2,62 +2,83 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Allocation;
-use App\Models\Announcement;
-use App\Models\Payment;
-use App\Models\Room;
 use App\Models\Student;
+use App\Models\Room;
+use App\Models\Allocation;
+use App\Models\Payment;
+use Illuminate\Support\Facades\Schema;
 
 class DashboardController extends Controller
 {
     public function index()
     {
-        // ── Core stats ───────────────────────────────────────────────────────
         $stats = [
-            'active_students'    => Student::where('status', 'active')->count(),
-            'available_rooms'    => Room::where('status', 'available')->count(),
-            'active_allocations' => Allocation::where('status', 'active')->count(),
-            'pending_payments'   => Payment::whereIn('status', ['pending', 'overdue'])->count(),
+            'active_students'    => 0,
+            'available_rooms'    => 0,
+            'active_allocations' => 0,
+            'pending_payments'   => 0,
         ];
 
-        // ── Occupancy rate (uses current_occupancy column from your schema) ──
-        $totalBeds     = (int) Room::sum('capacity');
-        $occupiedBeds  = (int) Room::sum('current_occupancy');
-        $occupancyRate = $totalBeds > 0
-            ? round(($occupiedBeds / $totalBeds) * 100)
-            : 0;
+        $occupancyRate     = 0;
+        $rooms             = collect();
+        $recentAllocations = collect();
+        $recentPayments    = collect();
+        $overduePayments   = collect();
+        $maintenanceRooms  = collect();
+        $announcements     = collect();
 
-        // ── Room list with safe fallback for current_occupancy ───────────────
-        $rooms = Room::with('building')->get()->map(function ($room) {
-            $room->current_occupancy = $room->current_occupancy ?? 0;
-            return $room;
-        });
+        try {
+            $stats['active_students'] = Student::where('status', 'Active')->count();
+        } catch (\Exception $e) {}
 
-        // ── Recent activity ──────────────────────────────────────────────────
-        $recentAllocations = Allocation::with(['student', 'room.building'])
-            ->latest()
-            ->take(5)
-            ->get();
+        try {
+            $stats['available_rooms'] = Room::where('status', 'Available')->count();
+        } catch (\Exception $e) {}
 
-        $recentPayments = Payment::with(['student', 'allocation.room'])
-            ->latest()
-            ->take(5)
-            ->get();
+        try {
+            $stats['active_allocations'] = Allocation::where('status', 'Active')->count();
+        } catch (\Exception $e) {}
 
-        $overduePayments = Payment::with('student')
-            ->where('status', 'overdue')
-            ->latest()
-            ->get();
+        try {
+            $stats['pending_payments'] = Payment::whereIn('status', ['Pending', 'Overdue'])->count();
+        } catch (\Exception $e) {}
 
-        $maintenanceRooms = Room::with('building')
-            ->where('status', 'maintenance')
-            ->get();
+        try {
+            if (Schema::hasTable('rooms')) {
+                $totalBeds     = Room::sum('capacity') ?? 0;
+                $occupiedBeds  = Schema::hasColumn('rooms', 'occupied') ? (Room::sum('occupied') ?? 0) : 0;
+                $occupancyRate = $totalBeds > 0 ? round(($occupiedBeds / $totalBeds) * 100) : 0;
+                $rooms = Room::all()->map(function ($room) {
+                    $room->occupied = $room->occupied ?? 0;
+                    return $room;
+                });
+            }
+        } catch (\Exception $e) {}
 
-        $announcements = Announcement::with('author')
-            ->where('is_published', true)
-            ->latest()
-            ->take(5)
-            ->get();
+        try {
+            if (Schema::hasTable('allocations')) {
+                $recentAllocations = Allocation::with(['student', 'room'])->latest()->take(5)->get();
+            }
+        } catch (\Exception $e) {}
+
+        try {
+            if (Schema::hasTable('payments')) {
+                $recentPayments  = Payment::with(['student', 'room'])->latest()->take(5)->get();
+                $overduePayments = Payment::with('student')->where('status', 'Overdue')->get();
+            }
+        } catch (\Exception $e) {}
+
+        try {
+            if (Schema::hasTable('rooms')) {
+                $maintenanceRooms = Room::where('status', 'Maintenance')->get();
+            }
+        } catch (\Exception $e) {}
+
+        try {
+            if (Schema::hasTable('announcements')) {
+                $announcements = \App\Models\Announcement::with('author')->latest()->take(5)->get();
+            }
+        } catch (\Exception $e) {}
 
         return view('dashboard', compact(
             'stats',

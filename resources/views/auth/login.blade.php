@@ -1,331 +1,352 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Login — DormSystem ND</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>Login — DormíPro</title>
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <style>
-        :root {
-            --primary: #004D98;
-            --secondary: #A50044;
-            --gold: #EDBB00;
-            --dark: #0a1628;
-            --surface: #0f1f3d;
-            --card: #162447;
-            --border: #1e3560;
-        }
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         body {
-            background: var(--dark);
+            font-family: 'Inter', sans-serif;
             min-height: 100vh;
+            background: linear-gradient(135deg, #0a1628 0%, #004d98 55%, #a50044 100%);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-family: 'Inter', system-ui, sans-serif;
-            padding: 24px 16px;
-            position: relative;
-            overflow-x: hidden;
+            padding: 1rem;
         }
-        body::before {
-            content: '';
+
+        /* Floating background orbs */
+        .orb {
             position: fixed;
-            top: -200px; right: -200px;
-            width: 500px; height: 500px;
-            background: var(--primary);
             border-radius: 50%;
-            opacity: .07;
             filter: blur(80px);
+            opacity: 0.15;
             pointer-events: none;
         }
-        body::after {
-            content: '';
-            position: fixed;
-            bottom: -200px; left: -200px;
-            width: 500px; height: 500px;
-            background: var(--secondary);
-            border-radius: 50%;
-            opacity: .07;
-            filter: blur(80px);
-            pointer-events: none;
-        }
-        .auth-wrapper {
-            position: relative;
-            z-index: 1;
+        .orb-1 { width: 500px; height: 500px; top: -150px; right: -150px; background: #004d98; }
+        .orb-2 { width: 400px; height: 400px; bottom: -120px; left: -120px; background: #a50044; }
+        .orb-3 { width: 300px; height: 300px; top: 40%; left: 40%; background: #edbb00; opacity: 0.08; }
+
+        /* Glass card */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.07);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.13);
+            border-radius: 24px;
+            padding: 2.5rem;
             width: 100%;
-            max-width: 440px;
+            max-width: 420px;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.4);
         }
-        .brand-logo {
-            width: 64px; height: 64px;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            border-radius: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 16px;
-            box-shadow: 0 8px 32px rgba(0,77,152,.3);
-        }
-        .auth-card {
-            background: var(--card);
-            border: 1px solid var(--border);
+
+        /* Logo badge */
+        .logo-badge {
+            width: 72px;
+            height: 72px;
             border-radius: 20px;
-            padding: 36px;
+            background: linear-gradient(135deg, #edbb00, #a50044);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.25rem;
+            box-shadow: 0 12px 35px rgba(165, 0, 68, 0.45);
+            animation: float 3s ease-in-out infinite;
         }
-        .form-label {
-            font-size: 12px;
-            font-weight: 500;
-            color: #94a3b8;
-            margin-bottom: 6px;
-            display: block;
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50%       { transform: translateY(-8px); }
         }
-        .form-control {
-            background: var(--surface) !important;
-            border: 1px solid var(--border) !important;
-            color: #fff !important;
-            border-radius: 10px !important;
-            padding: 10px 14px 10px 38px !important;
-            font-size: 14px !important;
-            transition: border-color .2s, box-shadow .2s !important;
+
+        /* Stripe bar (Barca colors) */
+        .stripe-bar {
+            height: 4px;
+            width: 56px;
+            margin: 0.75rem auto 0;
+            border-radius: 999px;
+            background: repeating-linear-gradient(
+                90deg,
+                #a50044 0%, #a50044 33%,
+                #004d98 33%, #004d98 66%,
+                #edbb00 66%, #edbb00 100%
+            );
+        }
+
+        /* Input fields */
+        .field-input {
             width: 100%;
+            padding: 0.75rem 1rem;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 12px;
+            color: #ffffff;
+            font-size: 0.875rem;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
         }
-        .form-control:focus {
-            border-color: var(--primary) !important;
-            box-shadow: 0 0 0 3px rgba(0,77,152,.2) !important;
-            outline: none !important;
+        .field-input::placeholder { color: rgba(255, 255, 255, 0.38); }
+        .field-input:focus {
+            border-color: #edbb00;
+            box-shadow: 0 0 0 3px rgba(237, 187, 0, 0.18);
         }
-        .form-control::placeholder { color: #475569 !important; }
-        .input-wrap {
-            position: relative;
+        .field-input.has-error {
+            border-color: #f87171;
+            box-shadow: 0 0 0 3px rgba(248, 113, 113, 0.18);
         }
-        .input-wrap .ico {
+
+        /* Password wrapper */
+        .pw-wrapper { position: relative; }
+        .pw-toggle {
             position: absolute;
-            left: 12px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #475569;
-            font-size: 13px;
-            pointer-events: none;
-        }
-        .input-wrap .eye-btn {
-            position: absolute;
-            right: 12px;
-            top: 50%;
-            transform: translateY(-50%);
+            inset-block: 0;
+            right: 0.875rem;
+            display: flex;
+            align-items: center;
             background: none;
             border: none;
-            color: #475569;
             cursor: pointer;
-            font-size: 13px;
-            padding: 0;
-            line-height: 1;
-            transition: color .2s;
+            color: rgba(255,255,255,0.4);
+            transition: color 0.2s;
         }
-        .input-wrap .eye-btn:hover { color: #94a3b8; }
-        .btn-auth {
+        .pw-toggle:hover { color: rgba(255,255,255,0.8); }
+
+        /* Login button */
+        .btn-login {
             width: 100%;
-            padding: 11px;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            padding: 0.875rem;
             border: none;
-            border-radius: 10px;
-            color: #fff;
-            font-size: 14px;
-            font-weight: 600;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            letter-spacing: 0.04em;
             cursor: pointer;
-            transition: opacity .2s, transform .1s;
-            letter-spacing: .3px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
+            background: linear-gradient(135deg, #edbb00 0%, #d97706 40%, #a50044 100%);
+            color: #ffffff;
+            transition: transform 0.15s, box-shadow 0.2s;
+            box-shadow: 0 6px 20px rgba(165, 0, 68, 0.35);
         }
-        .btn-auth:hover { opacity: .9; transform: translateY(-1px); }
-        .btn-auth:active { transform: translateY(0); }
-        .form-check-input {
-            background-color: var(--surface) !important;
-            border-color: var(--border) !important;
-            cursor: pointer;
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 28px rgba(165, 0, 68, 0.5);
         }
-        .form-check-input:checked {
-            background-color: var(--primary) !important;
-            border-color: var(--primary) !important;
+        .btn-login:active { transform: translateY(0); }
+        .btn-login:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
         }
-        .form-check-label {
-            font-size: 13px;
-            color: #94a3b8;
-            cursor: pointer;
-        }
-        .auth-link {
-            color: #60a5fa;
-            text-decoration: none;
-            font-size: 13px;
-            transition: color .2s;
-        }
-        .auth-link:hover { color: #93c5fd; }
-        .divider {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            color: #475569;
-            font-size: 12px;
-            margin: 20px 0;
-        }
-        .divider::before, .divider::after {
-            content: '';
-            flex: 1;
-            height: 1px;
-            background: var(--border);
-        }
-        .alert-err {
-            background: rgba(239,68,68,.1);
-            border: 1px solid rgba(239,68,68,.25);
+
+        /* Alert box */
+        .alert-error {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.35);
+            border-radius: 12px;
+            padding: 0.875rem 1rem;
             color: #fca5a5;
-            border-radius: 10px;
-            padding: 10px 14px;
-            font-size: 13px;
-            margin-bottom: 16px;
+            font-size: 0.875rem;
+            margin-bottom: 1.25rem;
         }
-        .alert-ok {
-            background: rgba(16,185,129,.1);
-            border: 1px solid rgba(16,185,129,.25);
+        .alert-success {
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid rgba(16, 185, 129, 0.35);
+            border-radius: 12px;
+            padding: 0.875rem 1rem;
             color: #6ee7b7;
-            border-radius: 10px;
-            padding: 10px 14px;
-            font-size: 13px;
-            margin-bottom: 16px;
+            font-size: 0.875rem;
+            margin-bottom: 1.25rem;
         }
-        .demo-box {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            padding: 12px 16px;
-            margin-top: 20px;
+
+        /* Labels */
+        .field-label {
+            display: block;
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.5);
+            margin-bottom: 0.4rem;
         }
-        .demo-box p { margin: 0; font-size: 11px; color: #475569; }
-        .demo-box p:first-child { color: #64748b; font-weight: 600; margin-bottom: 4px; }
+
+        /* Remember / forgot row */
+        .row-check {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 0.25rem;
+        }
+        .check-label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.8rem;
+            color: rgba(255,255,255,0.55);
+            cursor: pointer;
+            user-select: none;
+        }
+        .check-label input[type="checkbox"] {
+            width: 15px;
+            height: 15px;
+            accent-color: #edbb00;
+            cursor: pointer;
+        }
         .forgot-link {
-            font-size: 11px;
-            color: #60a5fa;
+            font-size: 0.8rem;
+            color: #edbb00;
             text-decoration: none;
-            transition: color .2s;
+            transition: color 0.2s;
         }
-        .forgot-link:hover { color: #93c5fd; }
+        .forgot-link:hover { color: #fcd34d; }
     </style>
 </head>
 <body>
 
-<div class="auth-wrapper">
+    {{-- Background orbs --}}
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
 
-    <div class="text-center mb-4">
-        <div class="brand-logo">
-            <i class="fa-solid fa-building fa-xl" style="color:#fff;"></i>
+    <div style="position:relative; z-index:10; width:100%; display:flex; flex-direction:column; align-items:center;">
+
+        {{-- Logo --}}
+        <div class="logo-badge">
+            <svg width="36" height="36" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+                <polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
         </div>
-        <h1 style="font-size:22px;font-weight:700;color:#fff;margin-bottom:4px;">DormSystem ND</h1>
-        <p style="color:#64748b;font-size:13px;margin:0;">Dormitory Room Allocation System</p>
-    </div>
 
-    <div class="auth-card">
-        <h2 style="font-size:16px;font-weight:600;color:#fff;margin-bottom:24px;">Sign in to your account</h2>
+        <h1 style="font-size:1.875rem; font-weight:900; color:#ffffff; letter-spacing:-0.02em; text-align:center; margin-bottom:0.25rem;">
+            DormíPro
+        </h1>
+        <p style="font-size:0.8rem; color:rgba(255,255,255,0.45); text-align:center; margin-bottom:0.5rem;">
+            Room Allocation Management System
+        </p>
+        <div class="stripe-bar"></div>
 
-        @if($errors->any())
-            <div class="alert-err">
-                <i class="fa-solid fa-circle-exclamation me-1"></i>
-                {{ $errors->first() }}
+        {{-- Card --}}
+        <div class="glass-card" style="margin-top:2rem;" x-data="{ showPw: false, loading: false }">
+
+            <h2 style="font-size:1.2rem; font-weight:700; color:#ffffff; margin-bottom:0.25rem;">
+                Welcome back
+            </h2>
+            <p style="font-size:0.8rem; color:rgba(255,255,255,0.45); margin-bottom:1.5rem;">
+                Sign in to your account to continue
+            </p>
+
+            {{-- Error message --}}
+            @if($errors->any())
+            <div class="alert-error">
+                <strong>⚠ Login failed:</strong> {{ $errors->first() }}
             </div>
-        @endif
+            @endif
 
-        @if(session('success'))
-            <div class="alert-ok">
-                <i class="fa-solid fa-circle-check me-1"></i>
-                {{ session('success') }}
+            {{-- Success message (e.g. after logout) --}}
+            @if(session('success'))
+            <div class="alert-success">
+                ✓ {{ session('success') }}
             </div>
-        @endif
+            @endif
 
-        <form method="POST" action="{{ route('login.post') }}" novalidate>
-            @csrf
+            {{-- Generic error from redirect --}}
+            @if(session('error'))
+            <div class="alert-error">
+                ⚠ {{ session('error') }}
+            </div>
+            @endif
 
-            <div style="margin-bottom:16px;">
-                <label class="form-label">Email Address</label>
-                <div class="input-wrap">
-                    <i class="fa-solid fa-envelope ico"></i>
+            <form
+                action="{{ route('login.post') }}"
+                method="POST"
+                @submit="loading = true"
+                style="display:flex; flex-direction:column; gap:1.25rem;"
+            >
+                @csrf
+
+                {{-- Email --}}
+                <div>
+                    <label class="field-label" for="email">Email Address</label>
                     <input
                         type="email"
+                        id="email"
                         name="email"
-                        class="form-control"
-                        placeholder="you@ndmu.edu.ph"
                         value="{{ old('email') }}"
                         required
                         autocomplete="email"
-                    />
+                        autofocus
+                        placeholder="your@email.com"
+                        class="field-input {{ $errors->has('email') ? 'has-error' : '' }}"
+                    >
                 </div>
-            </div>
 
-            <div style="margin-bottom:16px;">
-                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                    <label class="form-label" style="margin:0;">Password</label>
+                {{-- Password --}}
+                <div>
+                    <label class="field-label" for="password">Password</label>
+                    <div class="pw-wrapper">
+                        <input
+                            :type="showPw ? 'text' : 'password'"
+                            id="password"
+                            name="password"
+                            required
+                            autocomplete="current-password"
+                            placeholder="••••••••"
+                            class="field-input {{ $errors->has('password') ? 'has-error' : '' }}"
+                            style="padding-right:2.75rem;"
+                        >
+                        <button type="button" class="pw-toggle" @click="showPw = !showPw" tabindex="-1">
+                            {{-- Eye open --}}
+                            <svg x-show="!showPw" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                <circle cx="12" cy="12" r="3"/>
+                            </svg>
+                            {{-- Eye closed --}}
+                            <svg x-show="showPw" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/>
+                                <line x1="1" y1="1" x2="23" y2="23"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                {{-- Remember me + Forgot password --}}
+                <div class="row-check">
+                    <label class="check-label">
+                        <input type="checkbox" name="remember" {{ old('remember') ? 'checked' : '' }}>
+                        Remember me
+                    </label>
                     <a href="#" class="forgot-link">Forgot password?</a>
                 </div>
-                <div class="input-wrap">
-                    <i class="fa-solid fa-lock ico"></i>
-                    <input
-                        type="password"
-                        name="password"
-                        id="login-pass"
-                        class="form-control"
-                        placeholder="••••••••"
-                        required
-                        autocomplete="current-password"
-                    />
-                    <button type="button" class="eye-btn" onclick="togglePass('login-pass', this)">
-                        <i class="fa-solid fa-eye"></i>
-                    </button>
-                </div>
-            </div>
 
-            <div style="margin-bottom:24px;">
-                <div class="form-check">
-                    <input class="form-check-input" type="checkbox" name="remember" id="remember" {{ old('remember') ? 'checked' : '' }}>
-                    <label class="form-check-label" for="remember">Remember me</label>
-                </div>
-            </div>
-
-            <button type="submit" class="btn-auth">
-                <i class="fa-solid fa-right-to-bracket"></i> Sign In
-            </button>
-        </form>
-
-        <div class="divider">or</div>
-
-        <div class="text-center">
-            <span style="color:#64748b;font-size:13px;">Don't have an account?</span>
-            <a href="{{ route('register') }}" class="auth-link fw-semibold ms-1">Create Account</a>
+                {{-- Submit --}}
+                <button
+                    type="submit"
+                    class="btn-login"
+                    :disabled="loading"
+                    style="margin-top:0.25rem;"
+                >
+                    <span x-show="!loading">Sign In to DormíPro</span>
+                    <span x-show="loading" style="display:flex; align-items:center; justify-content:center; gap:0.5rem;">
+                        <svg style="animation:spin 1s linear infinite; width:16px; height:16px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                            <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+                        </svg>
+                        Signing in…
+                    </span>
+                </button>
+            </form>
         </div>
 
-        <div class="demo-box">
-            <p>Demo Credentials</p>
-            <p>Admin: admin@ndmu.edu.ph / admin123</p>
-            <p>Staff: staff@ndmu.edu.ph / staff123</p>
-        </div>
+        <p style="margin-top:1.5rem; font-size:0.72rem; color:rgba(255,255,255,0.25); text-align:center;">
+            © {{ date('Y') }} DormíPro — Dormitory Management System. All rights reserved.
+        </p>
     </div>
 
-    <p class="text-center mt-3" style="color:#334155;font-size:11px;">
-        © {{ date('Y') }} Notre Dame — DormSystem ND
-    </p>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script>
-function togglePass(id, btn) {
-    const inp  = document.getElementById(id);
-    const icon = btn.querySelector('i');
-    if (inp.type === 'password') {
-        inp.type = 'text';
-        icon.className = 'fa-solid fa-eye-slash';
-    } else {
-        inp.type = 'password';
-        icon.className = 'fa-solid fa-eye';
-    }
-}
-</script>
+    <style>
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    </style>
 </body>
 </html>

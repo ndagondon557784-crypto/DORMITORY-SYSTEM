@@ -72,7 +72,7 @@ class AuthController extends Controller
         $request->session()->regenerate();
 
         return redirect()->route('dashboard')
-            ->with('success', 'Account created successfully! Welcome, ' . $user->name . '.');
+            ->with('success', 'Account created! Welcome, ' . $user->name . '.');
     }
 
     public function logout(Request $request): RedirectResponse
