@@ -3,93 +3,85 @@
 namespace App\Http\Controllers;
 
 use App\Models\ActivityLog;
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\Rule;
-use Illuminate\Validation\Rules\Password;
 
 class UserController extends Controller
 {
     public function index(Request $request)
     {
-        $query = User::query();
+        $users = User::with('role')
+            ->when($request->search, fn($q, $s) => $q->where('name', 'like', "%{$s}%")->orWhere('email', 'like', "%{$s}%"))
+            ->when($request->role_id, fn($q, $r) => $q->where('role_id', $r))
+            ->orderBy('name')
+            ->paginate(15)
+            ->withQueryString();
 
-        if ($search = $request->search) {
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%");
-            });
-        }
-        if ($role = $request->role) {
-            $query->where('role', $role);
-        }
-        if ($request->has('status')) {
-            $query->where('is_active', $request->status === 'active');
-        }
+        $roles = Role::all();
 
-        $users = $query->latest()->paginate(15)->withQueryString();
-        return view('users.index', compact('users'));
+        return view('users.index', compact('users', 'roles'));
     }
 
     public function create()
     {
-        return view('users.create');
+        $roles = Role::all();
+        return view('users.create', compact('roles'));
     }
 
     public function store(Request $request)
     {
         $data = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
-            'password' => ['required', 'confirmed', Password::defaults()],
-            'role' => 'required|in:admin,staff,student',
-            'phone' => 'nullable|string|max:20',
-            'is_active' => 'nullable|boolean',
+            'name'     => 'required|string|max:255',
+            'email'    => 'required|email|unique:users,email',
+            'role_id'  => 'required|exists:roles,id',
+            'phone'    => 'nullable|string|max:20',
+            'password' => 'required|string|min:8|confirmed',
+            'is_active' => 'boolean',
         ]);
 
-        $data['password'] = Hash::make($data['password']);
+        $data['password']  = Hash::make($data['password']);
         $data['is_active'] = $request->boolean('is_active', true);
 
         $user = User::create($data);
-        ActivityLog::log('create', "User {$user->name} created", $user);
+
+        ActivityLog::log('create', "Created user: {$user->name}", 'User', $user->id);
 
         return redirect()->route('users.index')
-            ->with('success', "User {$user->name} created successfully!");
-    }
-
-    public function show(User $user)
-    {
-        $user->load(['activityLogs' => fn($q) => $q->latest()->take(10)]);
-        return view('users.show', compact('user'));
+            ->with('success', 'User created successfully.');
     }
 
     public function edit(User $user)
     {
-        return view('users.edit', compact('user'));
+        $roles = Role::all();
+        return view('users.edit', compact('user', 'roles'));
     }
 
     public function update(Request $request, User $user)
     {
         $data = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => ['required', 'email', Rule::unique('users')->ignore($user->id)],
-            'role' => 'required|in:admin,staff,student',
-            'phone' => 'nullable|string|max:20',
-            'is_active' => 'nullable|boolean',
+            'name'    => 'required|string|max:255',
+            'email'   => "required|email|unique:users,email,{$user->id}",
+            'role_id' => 'required|exists:roles,id',
+            'phone'   => 'nullable|string|max:20',
+            'password' => 'nullable|string|min:8|confirmed',
+            'is_active' => 'boolean',
         ]);
 
-        if ($request->filled('password')) {
-            $request->validate(['password' => ['confirmed', Password::defaults()]]);
-            $data['password'] = Hash::make($request->password);
+        if (empty($data['password'])) {
+            unset($data['password']);
+        } else {
+            $data['password'] = Hash::make($data['password']);
         }
 
-        $data['is_active'] = $request->boolean('is_active', true);
+        $data['is_active'] = $request->boolean('is_active');
         $user->update($data);
-        ActivityLog::log('update', "User {$user->name} updated", $user);
+
+        ActivityLog::log('update', "Updated user: {$user->name}", 'User', $user->id);
 
         return redirect()->route('users.index')
-            ->with('success', 'User updated successfully!');
+            ->with('success', 'User updated successfully.');
     }
 
     public function destroy(User $user)
@@ -97,11 +89,11 @@ class UserController extends Controller
         if ($user->id === auth()->id()) {
             return back()->with('error', 'You cannot delete your own account.');
         }
-        $name = $user->name;
+
         $user->delete();
-        ActivityLog::log('delete', "User {$name} deleted");
+        ActivityLog::log('delete', "Deleted user: {$user->name}", 'User', $user->id);
 
         return redirect()->route('users.index')
-            ->with('success', "User {$name} deleted successfully!");
+            ->with('success', 'User deleted.');
     }
 }

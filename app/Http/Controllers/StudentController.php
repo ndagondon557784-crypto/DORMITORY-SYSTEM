@@ -2,68 +2,93 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreStudentRequest;
+use App\Http\Requests\UpdateStudentRequest;
+use App\Models\ActivityLog;
 use App\Models\Student;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Storage;
 
 class StudentController extends Controller
 {
-    public function index(Request $request) {
-        $query = Student::with('allocation.room');
+    public function index(Request $request)
+    {
+        $query = Student::with(['activeAllocation.room.building'])
+            ->when($request->search, fn($q, $s) => $q->where(function ($q) use ($s) {
+                $q->where('full_name', 'like', "%{$s}%")
+                  ->orWhere('student_id', 'like', "%{$s}%")
+                  ->orWhere('email', 'like', "%{$s}%");
+            }))
+            ->when($request->status, fn($q, $s) => $q->where('status', $s))
+            ->when($request->gender, fn($q, $g) => $q->where('gender', $g));
 
-        if ($request->search) {
-            $query->where(function($q) use ($request) {
-                $q->where('name', 'like', "%{$request->search}%")
-                  ->orWhere('student_id', 'like', "%{$request->search}%")
-                  ->orWhere('course', 'like', "%{$request->search}%")
-                  ->orWhere('email', 'like', "%{$request->search}%");
-            });
-        }
+        $students = $query->orderBy('full_name')->paginate(15)->withQueryString();
 
-        if ($request->status && $request->status !== 'All') {
-            $query->where('status', $request->status);
-        }
-
-        $students = $query->latest()->paginate(15)->withQueryString();
         return view('students.index', compact('students'));
     }
 
-    public function store(Request $request) {
-        $data = $request->validate([
-            'name'       => 'required|string|max:255',
-            'email'      => 'required|email|unique:students',
-            'phone'      => 'nullable|string|max:20',
-            'course'     => 'required|string|max:255',
-            'year_level' => 'required|integer|min:1|max:6',
-            'gender'     => 'required|in:Male,Female',
-            'status'     => 'required|in:Active,Inactive,Graduated',
-        ]);
-
-        $year = date('Y');
-        $last = Student::where('student_id', 'like', "STU-{$year}-%")->count() + 1;
-        $data['student_id'] = "STU-{$year}-" . str_pad($last, 3, '0', STR_PAD_LEFT);
-
-        Student::create($data);
-        return back()->with('success', 'Student added successfully.');
+    public function create()
+    {
+        return view('students.create');
     }
 
-    public function update(Request $request, Student $student) {
-        $data = $request->validate([
-            'name'       => 'required|string|max:255',
-            'email'      => "required|email|unique:students,email,{$student->id}",
-            'phone'      => 'nullable|string|max:20',
-            'course'     => 'required|string|max:255',
-            'year_level' => 'required|integer|min:1|max:6',
-            'gender'     => 'required|in:Male,Female',
-            'status'     => 'required|in:Active,Inactive,Graduated',
-        ]);
+    public function store(StoreStudentRequest $request)
+    {
+        $data = $request->validated();
+
+        if ($request->hasFile('photo')) {
+            $data['photo'] = $request->file('photo')->store('students/photos', 'public');
+        }
+
+        $student = Student::create($data);
+
+        ActivityLog::log('create', "Created student: {$student->full_name}", 'Student', $student->id);
+
+        return redirect()->route('students.show', $student)
+            ->with('success', 'Student created successfully.');
+    }
+
+    public function show(Student $student)
+    {
+        $student->load(['activeAllocation.room.building', 'payments' => fn($q) => $q->latest()->limit(10)]);
+        return view('students.show', compact('student'));
+    }
+
+    public function edit(Student $student)
+    {
+        return view('students.edit', compact('student'));
+    }
+
+    public function update(UpdateStudentRequest $request, Student $student)
+    {
+        $data = $request->validated();
+
+        if ($request->hasFile('photo')) {
+            if ($student->photo) Storage::disk('public')->delete($student->photo);
+            $data['photo'] = $request->file('photo')->store('students/photos', 'public');
+        }
 
         $student->update($data);
-        return back()->with('success', 'Student updated successfully.');
+
+        ActivityLog::log('update', "Updated student: {$student->full_name}", 'Student', $student->id);
+
+        return redirect()->route('students.show', $student)
+            ->with('success', 'Student updated successfully.');
     }
 
-    public function destroy(Student $student) {
+    public function destroy(Student $student)
+    {
+        if ($student->activeAllocation) {
+            return back()->with('error', 'Cannot delete student with an active allocation.');
+        }
+
+        if ($student->photo) Storage::disk('public')->delete($student->photo);
+
         $student->delete();
-        return back()->with('success', 'Student deleted successfully.');
+
+        ActivityLog::log('delete', "Deleted student: {$student->full_name}", 'Student', $student->id);
+
+        return redirect()->route('students.index')
+            ->with('success', 'Student deleted successfully.');
     }
 }

@@ -3,33 +3,55 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Room extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
-        'room_number', 'floor', 'type', 'capacity',
-        'occupied', 'status', 'price_per_month', 'amenities'
+        'building_id', 'room_number', 'floor', 'room_type',
+        'capacity', 'current_occupancy', 'monthly_rate', 'status', 'amenities', 'description'
     ];
 
-    protected $casts = ['amenities' => 'array'];
+    protected $casts = ['monthly_rate' => 'decimal:2'];
 
-    public function allocations(): HasMany {
+    public function building()
+    {
+        return $this->belongsTo(Building::class);
+    }
+
+    public function allocations()
+    {
         return $this->hasMany(Allocation::class);
     }
 
-    public function activeAllocations(): HasMany {
-        return $this->hasMany(Allocation::class)->where('status', 'Active');
+    public function activeAllocations()
+    {
+        return $this->hasMany(Allocation::class)->where('status', 'active');
     }
 
-    public function payments(): HasMany {
-        return $this->hasMany(Payment::class);
+    public function getIsAvailableAttribute(): bool
+    {
+        return $this->current_occupancy < $this->capacity && $this->status !== 'maintenance';
     }
 
-    public function updateOccupancy(): void {
-        $count = $this->activeAllocations()->count();
-        $this->occupied = $count;
-        $this->status = $count >= $this->capacity ? 'Full' : ($this->status === 'Maintenance' ? 'Maintenance' : 'Available');
-        $this->save();
+    public function getOccupancyPercentageAttribute(): int
+    {
+        if ($this->capacity === 0) return 0;
+        return (int) round(($this->current_occupancy / $this->capacity) * 100);
+    }
+
+    public function updateStatus(): void
+    {
+        if ($this->status === 'maintenance') return;
+
+        if ($this->current_occupancy >= $this->capacity) {
+            $this->update(['status' => 'full']);
+        } elseif ($this->current_occupancy > 0) {
+            $this->update(['status' => 'occupied']);
+        } else {
+            $this->update(['status' => 'available']);
+        }
     }
 }

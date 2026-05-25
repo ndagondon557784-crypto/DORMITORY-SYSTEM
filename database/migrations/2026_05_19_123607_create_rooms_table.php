@@ -5,22 +5,27 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration {
-    public function up(): void {
+    public function up(): void
+    {
         Schema::create('rooms', function (Blueprint $table) {
             $table->id();
-            $table->string('room_number')->unique();
+            $table->foreignId('building_id')->constrained()->onDelete('cascade');
+            $table->string('room_number');
             $table->integer('floor')->default(1);
-            $table->enum('type', ['Single', 'Double', 'Triple', 'Quad']);
-            $table->integer('capacity');
-            $table->integer('occupied')->default(0);
-            $table->enum('status', ['Available', 'Full', 'Maintenance'])->default('Available');
-            $table->decimal('price_per_month', 10, 2)->default(0);
-            $table->json('amenities')->nullable();
+            $table->enum('room_type', ['single', 'double', 'triple', 'quad'])->default('double');
+            $table->integer('capacity')->default(2);
+            $table->integer('current_occupancy')->default(0);
+            $table->decimal('monthly_rate', 10, 2)->default(0);
+            $table->enum('status', ['available', 'occupied', 'full', 'maintenance'])->default('available');
+            $table->text('amenities')->nullable();
+            $table->text('description')->nullable();
             $table->timestamps();
+            $table->unique(['building_id', 'room_number']);
         });
     }
 
-    public function down(): void {
+    public function down(): void
+    {
         Schema::dropIfExists('rooms');
     }
 };

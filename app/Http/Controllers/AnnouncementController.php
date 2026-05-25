@@ -2,70 +2,72 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ActivityLog;
 use App\Models\Announcement;
-use App\Http\Requests\StoreAnnouncementRequest;
-use App\Http\Requests\UpdateAnnouncementRequest;
-use Illuminate\View\View;
-use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\Request;
 
 class AnnouncementController extends Controller
 {
-    public function index(): View
+    public function index()
     {
-        $announcements = Announcement::with('user')
-            ->latest()
-            ->paginate(15);
-
+        $announcements = Announcement::with('author')->latest()->paginate(15);
         return view('announcements.index', compact('announcements'));
     }
 
-    public function create(): View
+    public function create()
     {
         return view('announcements.create');
     }
 
-    public function store(StoreAnnouncementRequest $request): RedirectResponse
+    public function store(Request $request)
     {
-        Announcement::create([
-            'user_id' => Auth::id(),
-            ...$request->validated(),
+        $data = $request->validate([
+            'title'      => 'required|string|max:255',
+            'content'    => 'required|string',
+            'type'       => 'required|in:general,urgent,maintenance,event',
+            'target'     => 'required|in:all,students,staff',
+            'is_published' => 'boolean',
+            'expires_at' => 'nullable|date|after:today',
         ]);
 
+        $data['user_id']      = auth()->id();
+        $data['is_published'] = $request->boolean('is_published');
+
+        $announcement = Announcement::create($data);
+
+        ActivityLog::log('create', "Created announcement: {$announcement->title}", 'Announcement', $announcement->id);
+
         return redirect()->route('announcements.index')
-            ->with('success', 'Announcement created successfully');
+            ->with('success', 'Announcement published successfully.');
     }
 
-    public function show(Announcement $announcement): View
-    {
-        return view('announcements.show', compact('announcement'));
-    }
-
-    public function edit(Announcement $announcement): View
+    public function edit(Announcement $announcement)
     {
         return view('announcements.edit', compact('announcement'));
     }
 
-    public function update(UpdateAnnouncementRequest $request, Announcement $announcement): RedirectResponse
+    public function update(Request $request, Announcement $announcement)
     {
-        $announcement->update($request->validated());
+        $data = $request->validate([
+            'title'      => 'required|string|max:255',
+            'content'    => 'required|string',
+            'type'       => 'required|in:general,urgent,maintenance,event',
+            'target'     => 'required|in:all,students,staff',
+            'is_published' => 'boolean',
+            'expires_at' => 'nullable|date',
+        ]);
 
-        return redirect()->route('announcements.show', $announcement)
-            ->with('success', 'Announcement updated successfully');
-    }
-
-    public function destroy(Announcement $announcement): RedirectResponse
-    {
-        $announcement->delete();
+        $data['is_published'] = $request->boolean('is_published');
+        $announcement->update($data);
 
         return redirect()->route('announcements.index')
-            ->with('success', 'Announcement deleted successfully');
+            ->with('success', 'Announcement updated successfully.');
     }
 
-    public function pin(Announcement $announcement): RedirectResponse
+    public function destroy(Announcement $announcement)
     {
-        $announcement->update(['is_pinned' => !$announcement->is_pinned]);
-
-        return back()->with('success', 'Announcement pinned status updated');
+        $announcement->delete();
+        return redirect()->route('announcements.index')
+            ->with('success', 'Announcement deleted.');
     }
 }

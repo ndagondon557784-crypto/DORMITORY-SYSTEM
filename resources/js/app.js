@@ -1,7 +1,10 @@
 import './bootstrap';
 
-import Alpine from 'alpinejs';
-
-window.Alpine = Alpine;
-
-Alpine.start();
+// CSRF for AJAX
+window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
+document.addEventListener('DOMContentLoaded', () => {
+    const token = document.querySelector('meta[name="csrf-token"]');
+    if (token) {
+        window.axios.defaults.headers.common['X-CSRF-TOKEN'] = token.getAttribute('content');
+    }
+});

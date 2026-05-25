@@ -3,19 +3,57 @@
 namespace App\Models;
 
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
-    use Notifiable;
+    use HasFactory, Notifiable;
 
-    protected $fillable = ['name', 'email', 'password', 'role'];
+    protected $fillable = [
+        'role_id', 'name', 'email', 'phone', 'avatar', 'password', 'is_active'
+    ];
+
     protected $hidden = ['password', 'remember_token'];
 
-    protected function casts(): array {
-        return ['password' => 'hashed'];
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+        'password'          => 'hashed',
+        'is_active'         => 'boolean',
+    ];
+
+    public function role()
+    {
+        return $this->belongsTo(Role::class);
     }
 
-    public function isAdmin(): bool { return $this->role === 'admin'; }
-    public function isStaff(): bool { return $this->role === 'staff'; }
+    public function isAdmin(): bool
+    {
+        return $this->role?->name === 'admin';
+    }
+
+    public function isStaff(): bool
+    {
+        return in_array($this->role?->name, ['admin', 'staff']);
+    }
+
+    public function isStudent(): bool
+    {
+        return $this->role?->name === 'student';
+    }
+
+    public function student()
+    {
+        return $this->hasOne(Student::class);
+    }
+
+    public function activityLogs()
+    {
+        return $this->hasMany(ActivityLog::class);
+    }
+
+    public function announcements()
+    {
+        return $this->hasMany(Announcement::class);
+    }
 }

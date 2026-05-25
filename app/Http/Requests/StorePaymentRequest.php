@@ -6,21 +6,18 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class StorePaymentRequest extends FormRequest
 {
-    public function authorize(): bool
-    {
-        return true;
-    }
+    public function authorize(): bool { return true; }
 
     public function rules(): array
     {
         return [
-            'student_id' => ['required', 'exists:students,id'],
-            'allocation_id' => ['nullable', 'exists:allocations,id'],
-            'amount' => ['required', 'numeric', 'min:0.01'],
-            'payment_date' => ['required', 'date'],
-            'payment_method' => ['required', 'in:cash,bank_transfer,online'],
-            'reference_number' => ['nullable', 'string'],
-            'notes' => ['nullable', 'string'],
+            'allocation_id'  => 'required|exists:allocations,id',
+            'amount'         => 'required|numeric|min:1',
+            'payment_date'   => 'required|date',
+            'period_from'    => 'required|date',
+            'period_to'      => 'required|date|after:period_from',
+            'payment_method' => 'required|in:cash,gcash,bank_transfer,check',
+            'notes'          => 'nullable|string|max:500',
         ];
     }
 }

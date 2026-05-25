@@ -3,22 +3,45 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Payment extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
-        'student_id', 'room_id', 'amount',
-        'month', 'year', 'status', 'paid_date', 'notes'
+        'allocation_id', 'student_id', 'reference_number', 'amount',
+        'payment_date', 'period_from', 'period_to', 'payment_method',
+        'status', 'receipt_path', 'notes', 'recorded_by'
     ];
 
-    protected $casts = ['paid_date' => 'date'];
+    protected $casts = [
+        'amount'       => 'decimal:2',
+        'payment_date' => 'date',
+        'period_from'  => 'date',
+        'period_to'    => 'date',
+    ];
 
-    public function student(): BelongsTo {
+    public function allocation()
+    {
+        return $this->belongsTo(Allocation::class);
+    }
+
+    public function student()
+    {
         return $this->belongsTo(Student::class);
     }
 
-    public function room(): BelongsTo {
-        return $this->belongsTo(Room::class);
+    public function recordedBy()
+    {
+        return $this->belongsTo(User::class, 'recorded_by');
+    }
+
+    public static function generateReference(): string
+    {
+        do {
+            $ref = 'PAY-' . strtoupper(uniqid());
+        } while (self::where('reference_number', $ref)->exists());
+        return $ref;
     }
 }

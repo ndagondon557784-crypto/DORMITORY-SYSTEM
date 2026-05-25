@@ -1,162 +1,215 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-full" x-data="{ darkMode: localStorage.getItem('darkMode') === 'true', sidebarOpen: true }" x-init="$watch('darkMode', v => localStorage.setItem('darkMode', v))" :class="{ 'dark': darkMode }">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="csrf-token" content="{{ csrf_token() }}" />
-    <title>@yield('title', 'DormSystem ND')</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>@yield('title', 'DormiPro') — Dormitory Management</title>
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
-            --barca-blue: #004D98;
-            --barca-maroon: #A50044;
-            --barca-gold: #EDBB00;
-            --barca-dark: #0a1628;
-            --barca-surface: #0f1f3d;
-            --barca-card: #162447;
-            --barca-border: #1e3560;
+            --barca-navy:  #0a1628;
+            --barca-blue:  #004d98;
+            --barca-maroon:#a50044;
+            --barca-gold:  #edbb00;
+            --barca-light: #e8f0fe;
         }
-        * { box-sizing: border-box; }
-        body { font-family: 'Inter', system-ui, sans-serif; background: var(--barca-dark); color: #e2e8f0; }
-        ::-webkit-scrollbar { width: 5px; height: 5px; }
-        ::-webkit-scrollbar-track { background: var(--barca-dark); }
-        ::-webkit-scrollbar-thumb { background: var(--barca-border); border-radius: 3px; }
-        .sidebar-link { display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:8px; font-size:14px; font-weight:500; color:#94a3b8; transition:all .2s; text-decoration:none; }
-        .sidebar-link:hover { color:#fff; background:rgba(255,255,255,.05); }
-        .sidebar-link.active { color:#fff; background:linear-gradient(135deg,var(--barca-blue),var(--barca-maroon)); box-shadow:0 2px 8px rgba(0,77,152,.4); }
-        .card { background:var(--barca-card); border:1px solid var(--barca-border); border-radius:12px; }
-        .btn-primary { background:linear-gradient(135deg,var(--barca-blue),var(--barca-maroon)); color:#fff; border:none; padding:8px 16px; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:6px; transition:opacity .2s; }
-        .btn-primary:hover { opacity:.9; }
-        .btn-outline { background:transparent; color:#94a3b8; border:1px solid var(--barca-border); padding:8px 16px; border-radius:8px; font-size:14px; font-weight:500; cursor:pointer; transition:all .2s; }
-        .btn-outline:hover { color:#fff; border-color:#fff; }
-        .input { width:100%; padding:10px 12px; background:var(--barca-surface); border:1px solid var(--barca-border); border-radius:8px; color:#fff; font-size:14px; outline:none; transition:border-color .2s; }
-        .input:focus { border-color:var(--barca-blue); }
-        .input::placeholder { color:#475569; }
-        select.input option { background:var(--barca-surface); color:#fff; }
-        .badge { display:inline-flex; align-items:center; padding:2px 8px; border-radius:6px; font-size:11px; font-weight:600; }
-        .badge-success { background:rgba(16,185,129,.15); color:#34d399; border:1px solid rgba(16,185,129,.3); }
-        .badge-warning { background:rgba(245,158,11,.15); color:#fbbf24; border:1px solid rgba(245,158,11,.3); }
-        .badge-error   { background:rgba(239,68,68,.15);  color:#f87171; border:1px solid rgba(239,68,68,.3); }
-        .badge-info    { background:rgba(59,130,246,.15); color:#60a5fa; border:1px solid rgba(59,130,246,.3); }
-        .badge-default { background:rgba(148,163,184,.15); color:#94a3b8; border:1px solid rgba(148,163,184,.3); }
-        .table-row:hover { background:rgba(255,255,255,.03); }
-        .modal-overlay { position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);z-index:50;display:flex;align-items:center;justify-content:center;padding:16px; }
-        .modal-box { background:var(--barca-card);border:1px solid var(--barca-border);border-radius:16px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto; }
-        .alert-success { background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.2);color:#34d399;padding:10px 16px;border-radius:8px;font-size:14px;margin-bottom:16px; }
-        .alert-error   { background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);color:#f87171;padding:10px 16px;border-radius:8px;font-size:14px;margin-bottom:16px; }
+        body { font-family: 'Inter', sans-serif; }
+        .sidebar-link { @apply flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200; }
+        .sidebar-link:hover { @apply bg-white/10 text-white; }
+        .sidebar-link.active { @apply bg-white/20 text-white shadow-lg; }
+        .card-glass {
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .stat-card {
+            @apply rounded-2xl p-6 text-white shadow-xl;
+        }
+        .btn-primary {
+            @apply inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white transition-all duration-200 shadow-md hover:shadow-lg hover:-translate-y-0.5;
+            background: linear-gradient(135deg, var(--barca-blue), var(--barca-maroon));
+        }
+        .btn-secondary {
+            @apply inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold border border-gray-200 text-gray-700 bg-white transition-all duration-200 hover:bg-gray-50;
+        }
+        .form-input {
+            @apply w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all;
+        }
+        .table-row { @apply border-b border-gray-100 hover:bg-blue-50/30 transition-colors; }
+        .badge { @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold; }
+        .badge-green  { @apply badge bg-emerald-100 text-emerald-700; }
+        .badge-red    { @apply badge bg-red-100 text-red-700; }
+        .badge-yellow { @apply badge bg-yellow-100 text-yellow-700; }
+        .badge-blue   { @apply badge bg-blue-100 text-blue-700; }
+        .badge-gray   { @apply badge bg-gray-100 text-gray-600; }
+        .scrollbar-hidden::-webkit-scrollbar { display: none; }
+        .dark .form-input { @apply bg-gray-800 border-gray-600 text-gray-100; }
+        .dark body { @apply bg-gray-900 text-gray-100; }
     </style>
-    @stack('styles')
 </head>
-<body>
-<div style="display:flex;height:100vh;overflow:hidden;">
+<body class="h-full bg-gray-50 dark:bg-gray-900" x-cloak>
 
-    <!-- Mobile overlay -->
-    <div id="sidebar-overlay" onclick="closeSidebar()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:20;"></div>
+<div class="flex h-screen overflow-hidden">
 
-    <!-- Sidebar -->
-    <aside id="sidebar" style="position:fixed;inset-y:0;left:0;z-index:30;width:256px;display:flex;flex-direction:column;background:var(--barca-surface);border-right:1px solid var(--barca-border);transform:translateX(-256px);transition:transform .3s;" class="lg-sidebar">
-        <!-- Logo -->
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid var(--barca-border);">
-            <div style="display:flex;align-items:center;gap:12px;">
-                <div style="width:36px;height:36px;background:var(--barca-blue);border-radius:8px;display:flex;align-items:center;justify-content:center;">
-                    <i class="fa-solid fa-building" style="color:#fff;font-size:16px;"></i>
-                </div>
-                <div>
-                    <p style="font-weight:700;color:#fff;font-size:14px;line-height:1.2;">DormSystem</p>
-                    <p style="font-size:11px;color:var(--barca-gold);">ND Campus</p>
-                </div>
+    {{-- SIDEBAR --}}
+    <aside
+        class="fixed inset-y-0 left-0 z-50 w-64 flex-shrink-0 overflow-y-auto scrollbar-hidden transition-transform duration-300"
+        :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
+        style="background: linear-gradient(180deg, #0a1628 0%, #004d98 60%, #a50044 100%);">
+
+        {{-- Logo --}}
+        <div class="flex items-center gap-3 px-6 py-5 border-b border-white/10">
+            <div class="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-lg" style="background: linear-gradient(135deg,#edbb00,#a50044)">D</div>
+            <div>
+                <div class="text-white font-bold text-lg leading-tight">DormíPro</div>
+                <div class="text-white/50 text-xs">Room Allocation System</div>
             </div>
-            <button onclick="closeSidebar()" style="background:none;border:none;color:#94a3b8;cursor:pointer;font-size:18px;" class="lg-hidden"><i class="fa-solid fa-xmark"></i></button>
         </div>
 
-        <!-- Nav -->
-        <nav style="flex:1;padding:16px 12px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;">
-            <a href="{{ route('dashboard') }}" class="sidebar-link {{ request()->routeIs('dashboard') ? 'active' : '' }}"><i class="fa-solid fa-gauge-high" style="width:18px;"></i> Dashboard</a>
-            <a href="{{ route('students.index') }}" class="sidebar-link {{ request()->routeIs('students.*') ? 'active' : '' }}"><i class="fa-solid fa-users" style="width:18px;"></i> Students</a>
-            <a href="{{ route('rooms.index') }}" class="sidebar-link {{ request()->routeIs('rooms.*') ? 'active' : '' }}"><i class="fa-solid fa-bed" style="width:18px;"></i> Rooms</a>
-            <a href="{{ route('allocations.index') }}" class="sidebar-link {{ request()->routeIs('allocations.*') ? 'active' : '' }}"><i class="fa-solid fa-clipboard-list" style="width:18px;"></i> Allocations</a>
-            <a href="{{ route('payments.index') }}" class="sidebar-link {{ request()->routeIs('payments.*') ? 'active' : '' }}"><i class="fa-solid fa-credit-card" style="width:18px;"></i> Payments</a>
-            <a href="{{ route('reports.index') }}" class="sidebar-link {{ request()->routeIs('reports.*') ? 'active' : '' }}"><i class="fa-solid fa-chart-bar" style="width:18px;"></i> Reports</a>
+        {{-- User Info --}}
+        <div class="px-6 py-4 border-b border-white/10">
+            <div class="flex items-center gap-3">
+                @if(auth()->user()->avatar)
+                    <img src="{{ asset('storage/'.auth()->user()->avatar) }}" class="w-9 h-9 rounded-full object-cover ring-2 ring-yellow-400">
+                @else
+                    <div class="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-white" style="background:var(--barca-maroon)">
+                        {{ strtoupper(substr(auth()->user()->name,0,1)) }}
+                    </div>
+                @endif
+                <div class="overflow-hidden">
+                    <div class="text-white text-sm font-semibold truncate">{{ auth()->user()->name }}</div>
+                    <div class="text-white/50 text-xs">{{ auth()->user()->role?->display_name }}</div>
+                </div>
+            </div>
+        </div>
+
+        {{-- Navigation --}}
+        <nav class="px-4 py-4 space-y-1">
+            <a href="{{ route('dashboard') }}" class="sidebar-link {{ request()->routeIs('dashboard') ? 'active' : 'text-white/70' }}">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                Dashboard
+            </a>
+
+            @can('admin,staff')
+            <div class="pt-3 pb-1 px-4 text-xs font-semibold text-white/30 uppercase tracking-widest">Management</div>
+
+            <a href="{{ route('students.index') }}" class="sidebar-link {{ request()->routeIs('students.*') ? 'active' : 'text-white/70' }}">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                Students
+            </a>
+
+            <a href="{{ route('rooms.index') }}" class="sidebar-link {{ request()->routeIs('rooms.*') ? 'active' : 'text-white/70' }}">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                Rooms
+            </a>
+
+            <a href="{{ route('allocations.index') }}" class="sidebar-link {{ request()->routeIs('allocations.*') ? 'active' : 'text-white/70' }}">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                Allocations
+            </a>
+
+            <a href="{{ route('payments.index') }}" class="sidebar-link {{ request()->routeIs('payments.*') ? 'active' : 'text-white/70' }}">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+                Payments
+            </a>
+
+            <div class="pt-3 pb-1 px-4 text-xs font-semibold text-white/30 uppercase tracking-widest">Reports</div>
+
+            <a href="{{ route('reports.index') }}" class="sidebar-link {{ request()->routeIs('reports.*') ? 'active' : 'text-white/70' }}">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                Reports
+            </a>
+            @endcan
+
+            <a href="{{ route('announcements.index') }}" class="sidebar-link {{ request()->routeIs('announcements.*') ? 'active' : 'text-white/70' }}">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"/></svg>
+                Announcements
+            </a>
+
+            @if(auth()->user()->isAdmin())
+            <div class="pt-3 pb-1 px-4 text-xs font-semibold text-white/30 uppercase tracking-widest">Admin</div>
+            <a href="{{ route('users.index') }}" class="sidebar-link {{ request()->routeIs('users.*') ? 'active' : 'text-white/70' }}">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+                Users
+            </a>
+            @endif
         </nav>
 
-        <!-- Footer -->
-        <div style="padding:12px;border-top:1px solid var(--barca-border);">
-            <div style="background:var(--barca-card);border-radius:8px;padding:10px 12px;margin-bottom:8px;">
-                <p style="font-size:11px;color:#64748b;">Logged in as</p>
-                <p style="font-size:13px;font-weight:600;color:#fff;">{{ auth()->user()->name }}</p>
-                <p style="font-size:11px;color:var(--barca-gold);text-transform:capitalize;">{{ auth()->user()->role }}</p>
-            </div>
-            <form method="POST" action="{{ route('logout') }}">
+        {{-- Bottom --}}
+        <div class="absolute bottom-0 left-0 right-0 p-4 border-t border-white/10">
+            <form action="{{ route('logout') }}" method="POST">
                 @csrf
-                <button type="submit" class="sidebar-link" style="width:100%;border:none;cursor:pointer;background:none;color:#94a3b8;">
-                    <i class="fa-solid fa-right-from-bracket" style="width:18px;"></i> Sign Out
+                <button type="submit" class="sidebar-link text-white/70 w-full hover:bg-red-500/20 hover:text-red-300">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                    Logout
                 </button>
             </form>
         </div>
     </aside>
 
-    <!-- Main -->
-    <div style="flex:1;display:flex;flex-direction:column;overflow:hidden;margin-left:0;" id="main-content">
-        <!-- Header -->
-        <header style="display:flex;align-items:center;justify-content:space-between;padding:12px 24px;background:var(--barca-surface);border-bottom:1px solid var(--barca-border);flex-shrink:0;">
-            <button onclick="openSidebar()" style="background:none;border:none;color:#94a3b8;cursor:pointer;font-size:20px;padding:4px;" id="menu-btn">
-                <i class="fa-solid fa-bars"></i>
-            </button>
-            <div style="display:flex;align-items:center;gap:12px;">
-                <div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--barca-blue),var(--barca-maroon));display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;">
-                    {{ strtoupper(substr(auth()->user()->name, 0, 2)) }}
+    {{-- MAIN CONTENT --}}
+    <div class="flex flex-col flex-1 min-w-0 overflow-hidden" :class="sidebarOpen ? 'lg:pl-64' : 'pl-0'">
+
+        {{-- Top Bar --}}
+        <header class="flex items-center justify-between px-6 py-4 bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 shadow-sm z-40 flex-shrink-0">
+            <div class="flex items-center gap-4">
+                <button @click="sidebarOpen = !sidebarOpen" class="text-gray-500 hover:text-gray-700 dark:text-gray-400">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+                </button>
+                <div>
+                    <h1 class="text-lg font-bold text-gray-800 dark:text-white">@yield('page-title', 'Dashboard')</h1>
+                    <div class="text-xs text-gray-400">@yield('breadcrumb', 'Home')</div>
                 </div>
-                <div style="display:none;" class="md-block">
-                    <p style="font-size:13px;font-weight:600;color:#fff;line-height:1.2;">{{ auth()->user()->name }}</p>
-                    <p style="font-size:11px;color:#64748b;text-transform:capitalize;">{{ auth()->user()->role }}</p>
-                </div>
+            </div>
+
+            <div class="flex items-center gap-3">
+                {{-- Dark Mode --}}
+                <button @click="darkMode = !darkMode" class="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 transition-colors">
+                    <svg x-show="!darkMode" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+                    <svg x-show="darkMode" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+                </button>
+
+                {{-- Profile --}}
+                <a href="{{ route('profile.edit') }}" class="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                    <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white" style="background:var(--barca-maroon)">
+                        {{ strtoupper(substr(auth()->user()->name,0,1)) }}
+                    </div>
+                    <span class="text-sm font-medium text-gray-700 dark:text-gray-200 hidden sm:block">{{ auth()->user()->name }}</span>
+                </a>
             </div>
         </header>
 
-        <!-- Page content -->
-        <main style="flex:1;overflow-y:auto;padding:24px;">
-            @if(session('success'))
-                <div class="alert-success"><i class="fa-solid fa-circle-check"></i> {{ session('success') }}</div>
-            @endif
-            @if(session('error'))
-                <div class="alert-error"><i class="fa-solid fa-circle-exclamation"></i> {{ session('error') }}</div>
-            @endif
+        {{-- Flash Messages --}}
+        @if(session('success'))
+        <div x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 4000)"
+             class="mx-6 mt-4 flex items-center gap-3 px-5 py-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm font-medium shadow-sm">
+            <svg class="w-5 h-5 text-emerald-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            {{ session('success') }}
+            <button @click="show = false" class="ml-auto text-emerald-400 hover:text-emerald-600">✕</button>
+        </div>
+        @endif
+
+        @if(session('error'))
+        <div x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 5000)"
+             class="mx-6 mt-4 flex items-center gap-3 px-5 py-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm font-medium shadow-sm">
+            <svg class="w-5 h-5 text-red-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            {{ session('error') }}
+            <button @click="show = false" class="ml-auto text-red-400 hover:text-red-600">✕</button>
+        </div>
+        @endif
+
+        {{-- Content --}}
+        <main class="flex-1 overflow-y-auto p-6">
             @yield('content')
         </main>
     </div>
 </div>
 
-<style>
-@media(min-width:1024px){
-    #sidebar{transform:translateX(0)!important;}
-    #main-content{margin-left:256px!important;}
-    #menu-btn{display:none!important;}
-    #sidebar-overlay{display:none!important;}
-}
-@media(min-width:768px){ .md-block{display:block!important;} }
-</style>
-
-<script>
-function openSidebar(){
-    document.getElementById('sidebar').style.transform='translateX(0)';
-    document.getElementById('sidebar-overlay').style.display='block';
-}
-function closeSidebar(){
-    document.getElementById('sidebar').style.transform='translateX(-256px)';
-    document.getElementById('sidebar-overlay').style.display='none';
-}
-function openModal(id){ document.getElementById(id).style.display='flex'; }
-function closeModal(id){ document.getElementById(id).style.display='none'; }
-// Close modal on outside click
-document.addEventListener('click', function(e){
-    if(e.target.classList.contains('modal-overlay')){
-        e.target.style.display='none';
-    }
-});
-// Auto-hide alerts
-setTimeout(()=>{ document.querySelectorAll('.alert-success,.alert-error').forEach(el=>el.style.display='none'); }, 4000);
-</script>
 @stack('scripts')
 </body>
 </html>

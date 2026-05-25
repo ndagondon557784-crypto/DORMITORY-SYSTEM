@@ -2,39 +2,36 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Building extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory;
 
     protected $fillable = [
-        'name',
-        'code',
-        'description',
-        'location',
-        'floors',
-        'is_active',
+        'name', 'code', 'total_floors', 'description', 'gender_type', 'is_active'
     ];
 
-    protected $casts = [
-        'is_active' => 'boolean',
-    ];
+    protected $casts = ['is_active' => 'boolean'];
 
     public function rooms()
     {
         return $this->hasMany(Room::class);
     }
 
-    public function getTotalRoomsAttribute()
+    public function getAvailableRoomsCountAttribute(): int
     {
-        return $this->rooms()->count();
+        return $this->rooms()->where('status', 'available')->count();
     }
 
-    public function getTotalCapacityAttribute()
+    public function getTotalCapacityAttribute(): int
     {
         return $this->rooms()->sum('capacity');
+    }
+
+    public function getCurrentOccupancyAttribute(): int
+    {
+        return $this->rooms()->sum('current_occupancy');
     }
 }

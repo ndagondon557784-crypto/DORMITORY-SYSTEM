@@ -1,28 +1,18 @@
 <?php
 
-namespace App\Models;
+namespace Database\Seeders;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Seeder;
 
-class ActivityLog extends Model
+class DatabaseSeeder extends Seeder
 {
-    use HasFactory;
-
-    protected $fillable = [
-        'user_id',
-        'action',
-        'model',
-        'model_id',
-        'changes',
-        'ip_address',
-        'user_agent',
-    ];
-
-    public $timestamps = true;
-
-    public function user()
+    public function run(): void
     {
-        return $this->belongsTo(User::class);
+        $this->call([
+            RoleSeeder::class,
+            UserSeeder::class,
+            BuildingSeeder::class,
+            RoomSeeder::class,
+        ]);
     }
 }

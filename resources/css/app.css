@@ -1,3 +1,41 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+[x-cloak] { display: none !important; }
+
+@layer base {
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { -webkit-font-smoothing: antialiased; }
+}
+
+@layer components {
+    .btn-primary {
+        @apply inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white transition-all duration-200 shadow-md hover:shadow-lg hover:-translate-y-0.5;
+        background: linear-gradient(135deg, #004d98, #a50044);
+    }
+    .btn-primary:hover { background: linear-gradient(135deg, #0060c0, #c00054); }
+
+    .btn-secondary {
+        @apply inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold border border-gray-200 text-gray-700 bg-white transition-all duration-200 hover:bg-gray-50 shadow-sm;
+    }
+
+    .form-input {
+        @apply w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white;
+    }
+    .dark .form-input {
+        @apply bg-gray-700 border-gray-600 text-gray-100 focus:ring-blue-400;
+    }
+
+    .badge { @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold; }
+    .badge-green  { @apply bg-emerald-100 text-emerald-700; }
+    .badge-red    { @apply bg-red-100 text-red-700; }
+    .badge-yellow { @apply bg-yellow-100 text-yellow-700; }
+    .badge-blue   { @apply bg-blue-100 text-blue-700; }
+    .badge-gray   { @apply bg-gray-100 text-gray-600; }
+
+    .stat-card    { @apply rounded-2xl p-6 text-white shadow-xl; }
+    .table-row    { @apply border-b border-gray-50 hover:bg-blue-50/40 transition-colors; }
+    .sidebar-link { @apply flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200; }
+}

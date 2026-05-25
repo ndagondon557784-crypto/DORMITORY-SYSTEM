@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     public function up(): void
     {
         Schema::create('announcements', function (Blueprint $table) {
@@ -13,12 +12,11 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->string('title');
             $table->text('content');
-            $table->string('type')->default('general'); // general, maintenance, event, urgent
-            $table->boolean('is_pinned')->default(false);
-            $table->timestamp('published_at')->nullable();
-            $table->timestamp('expires_at')->nullable();
+            $table->enum('type', ['general', 'urgent', 'maintenance', 'event'])->default('general');
+            $table->enum('target', ['all', 'students', 'staff'])->default('all');
+            $table->boolean('is_published')->default(true);
+            $table->date('expires_at')->nullable();
             $table->timestamps();
-            $table->softDeletes();
         });
     }
 

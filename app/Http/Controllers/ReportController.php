@@ -2,51 +2,53 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Student;
-use App\Models\Room;
 use App\Models\Allocation;
 use App\Models\Payment;
+use App\Models\Room;
+use App\Models\Student;
+use Illuminate\Http\Request;
 
 class ReportController extends Controller
 {
-    public function index() {
-        $data = [
-            'total_students'     => Student::count(),
-            'active_students'    => Student::where('status', 'Active')->count(),
-            'total_rooms'        => Room::count(),
-            'occupancy_rate'     => $this->getOccupancyRate(),
-            'total_collected'    => Payment::where('status', 'Paid')->sum('amount'),
-            'total_pending'      => Payment::where('status', 'Pending')->sum('amount'),
-            'total_overdue'      => Payment::where('status', 'Overdue')->sum('amount'),
-            'collection_rate'    => $this->getCollectionRate(),
-        ];
-
-        $rooms          = Room::all();
-        $courseBreakdown = Student::where('status', 'Active')
-            ->selectRaw('course, count(*) as total')
-            ->groupBy('course')->get();
-
-        $monthlyPayments = Payment::selectRaw('month, year, sum(amount) as total, status')
-            ->groupBy('month', 'year', 'status')
-            ->orderBy('year')->orderBy('month')->get();
-
-        return view('reports.index', compact('data', 'rooms', 'courseBreakdown', 'monthlyPayments'));
+    public function index()
+    {
+        return view('reports.index');
     }
 
-    public function export(string $type) {
-        // Hook into your PDF/Excel export package here (e.g. barryvdh/laravel-dompdf)
-        return back()->with('info', "Export for {$type} — connect your PDF/Excel package here.");
+    public function occupancy()
+    {
+        $rooms = Room::with(['building', 'activeAllocations.student'])->get();
+        return view('reports.occupancy', compact('rooms'));
     }
 
-    private function getOccupancyRate(): int {
-        $total    = Room::sum('capacity');
-        $occupied = Room::sum('occupied');
-        return $total > 0 ? round(($occupied / $total) * 100) : 0;
+    public function revenue(Request $request)
+    {
+        $year = $request->year ?? now()->year;
+
+        $monthly = [];
+        for ($m = 1; $m <= 12; $m++) {
+            $monthly[] = [
+                'month'  => date('F', mktime(0, 0, 0, $m, 1)),
+                'amount' => Payment::where('status', 'paid')
+                    ->whereYear('payment_date', $year)
+                    ->whereMonth('payment_date', $m)
+                    ->sum('amount'),
+            ];
+        }
+
+        $total = array_sum(array_column($monthly, 'amount'));
+
+        return view('reports.revenue', compact('monthly', 'total', 'year'));
     }
 
-    private function getCollectionRate(): int {
-        $total = Payment::count();
-        $paid  = Payment::where('status', 'Paid')->count();
-        return $total > 0 ? round(($paid / $total) * 100) : 0;
+    public function allocations(Request $request)
+    {
+        $allocations = Allocation::with(['student', 'room.building'])
+            ->when($request->status, fn($q, $s) => $q->where('status', $s))
+            ->latest()
+            ->paginate(20)
+            ->withQueryString();
+
+        return view('reports.allocations', compact('allocations'));
     }
 }

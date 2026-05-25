@@ -1,85 +1,130 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Login — DormSystem ND</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login — DormíPro</title>
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        :root{--barca-blue:#004D98;--barca-maroon:#A50044;--barca-gold:#EDBB00;--barca-dark:#0a1628;--barca-surface:#0f1f3d;--barca-card:#162447;--barca-border:#1e3560;}
-        body{font-family:system-ui,sans-serif;background:var(--barca-dark);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px;}
-        .input{width:100%;padding:10px 12px 10px 38px;background:var(--barca-surface);border:1px solid var(--barca-border);border-radius:8px;color:#fff;font-size:14px;outline:none;transition:border-color .2s;}
-        .input:focus{border-color:var(--barca-blue);}
-        .input::placeholder{color:#475569;}
+        body { font-family: 'Inter', sans-serif; }
+        .barca-bg {
+            background: linear-gradient(135deg, #0a1628 0%, #004d98 50%, #a50044 100%);
+            min-height: 100vh;
+        }
+        .glass-card {
+            background: rgba(255,255,255,0.08);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.15);
+        }
+        .form-input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border-radius: 0.75rem;
+            border: 1px solid rgba(255,255,255,0.2);
+            background: rgba(255,255,255,0.08);
+            color: white;
+            font-size: 0.875rem;
+            outline: none;
+            transition: all 0.2s;
+        }
+        .form-input::placeholder { color: rgba(255,255,255,0.4); }
+        .form-input:focus { border-color: #edbb00; box-shadow: 0 0 0 3px rgba(237,187,0,0.2); }
+        .btn-login {
+            width: 100%;
+            padding: 0.75rem;
+            border-radius: 0.75rem;
+            font-weight: 700;
+            font-size: 0.9rem;
+            letter-spacing: 0.05em;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: linear-gradient(135deg, #edbb00, #a50044);
+            color: white;
+        }
+        .btn-login:hover { transform: translateY(-1px); box-shadow: 0 8px 25px rgba(165,0,68,0.4); }
+        .stripe-bar {
+            height: 5px;
+            background: repeating-linear-gradient(90deg, #a50044 0px, #a50044 33%, #004d98 33%, #004d98 66%, #edbb00 66%, #edbb00 100%);
+            border-radius: 999px;
+        }
+        @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+        .logo-badge { animation: float 3s ease-in-out infinite; }
     </style>
 </head>
-<body>
-<div style="position:absolute;inset:0;overflow:hidden;pointer-events:none;">
-    <div style="position:absolute;top:-160px;right:-160px;width:400px;height:400px;background:var(--barca-blue);border-radius:50%;opacity:.08;filter:blur(80px);"></div>
-    <div style="position:absolute;bottom:-160px;left:-160px;width:400px;height:400px;background:var(--barca-maroon);border-radius:50%;opacity:.08;filter:blur(80px);"></div>
-</div>
+<body class="barca-bg flex items-center justify-center p-4">
 
-<div style="position:relative;width:100%;max-width:420px;">
-    <div style="text-align:center;margin-bottom:32px;">
-        <div style="display:inline-flex;width:64px;height:64px;background:linear-gradient(135deg,var(--barca-blue),var(--barca-maroon));border-radius:16px;align-items:center;justify-content:center;margin-bottom:16px;">
-            <i class="fa-solid fa-building" style="color:#fff;font-size:28px;"></i>
-        </div>
-        <h1 style="font-size:24px;font-weight:700;color:#fff;">DormSystem ND</h1>
-        <p style="color:#64748b;font-size:14px;margin-top:4px;">Dormitory Room Allocation System</p>
+    {{-- Background Orbs --}}
+    <div class="fixed inset-0 overflow-hidden pointer-events-none">
+        <div class="absolute -top-40 -right-40 w-96 h-96 rounded-full opacity-20 blur-3xl" style="background:#004d98"></div>
+        <div class="absolute -bottom-40 -left-40 w-96 h-96 rounded-full opacity-20 blur-3xl" style="background:#a50044"></div>
+        <div class="absolute top-1/2 left-1/2 w-64 h-64 rounded-full opacity-10 blur-3xl -translate-x-1/2 -translate-y-1/2" style="background:#edbb00"></div>
     </div>
 
-    <div style="background:var(--barca-card);border:1px solid var(--barca-border);border-radius:16px;padding:32px;">
-        <h2 style="font-size:16px;font-weight:600;color:#fff;margin-bottom:24px;">Sign in to your account</h2>
+    <div class="relative w-full max-w-md">
 
-        @if($errors->any())
-            <div style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);color:#f87171;padding:10px 16px;border-radius:8px;font-size:13px;margin-bottom:16px;">
-                <i class="fa-solid fa-circle-exclamation"></i> {{ $errors->first() }}
+        {{-- Logo --}}
+        <div class="text-center mb-8">
+            <div class="logo-badge inline-flex items-center justify-center w-20 h-20 rounded-2xl shadow-2xl mb-4" style="background:linear-gradient(135deg,#edbb00,#a50044)">
+                <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                </svg>
             </div>
-        @endif
-
-        <form method="POST" action="/login" style="display:flex;flex-direction:column;gap:16px;">
-            @csrf
-            <div>
-                <label style="display:block;font-size:12px;font-weight:500;color:#94a3b8;margin-bottom:6px;">Email Address</label>
-                <div style="position:relative;">
-                    <i class="fa-solid fa-envelope" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#475569;font-size:14px;"></i>
-                    <input type="email" name="email" value="{{ old('email') }}" placeholder="you@ndmu.edu.ph" required class="input" style="padding-left:38px;" />
-                </div>
-            </div>
-            <div>
-                <label style="display:block;font-size:12px;font-weight:500;color:#94a3b8;margin-bottom:6px;">Password</label>
-                <div style="position:relative;">
-                    <i class="fa-solid fa-lock" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#475569;font-size:14px;"></i>
-                    <input type="password" name="password" placeholder="••••••••" required class="input" style="padding-left:38px;" id="pass-input"/>
-                    <button type="button" onclick="togglePass()" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:#475569;cursor:pointer;font-size:14px;" id="pass-toggle">
-                        <i class="fa-solid fa-eye"></i>
-                    </button>
-                </div>
-            </div>
-            <div style="display:flex;align-items:center;gap:8px;">
-                <input type="checkbox" name="remember" id="remember" style="accent-color:var(--barca-blue);" />
-                <label for="remember" style="font-size:13px;color:#94a3b8;cursor:pointer;">Remember me</label>
-            </div>
-            <button type="submit" style="width:100%;padding:11px;background:linear-gradient(135deg,var(--barca-blue),var(--barca-maroon));color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;margin-top:4px;">
-                Sign In
-            </button>
-        </form>
-
-        <div style="margin-top:20px;background:var(--barca-surface);border:1px solid var(--barca-border);border-radius:8px;padding:12px;">
-            <p style="font-size:11px;font-weight:600;color:#64748b;margin-bottom:4px;">Demo Credentials</p>
-            <p style="font-size:11px;color:#475569;">Admin: admin@ndmu.edu.ph / admin123</p>
-            <p style="font-size:11px;color:#475569;">Staff: staff@ndmu.edu.ph / staff123</p>
+            <h1 class="text-3xl font-extrabold text-white tracking-tight">DormíPro</h1>
+            <p class="text-white/50 text-sm mt-1">Room Allocation Management System</p>
+            <div class="stripe-bar w-24 mx-auto mt-3"></div>
         </div>
+
+        {{-- Card --}}
+        <div class="glass-card rounded-3xl p-8 shadow-2xl">
+            <h2 class="text-xl font-bold text-white mb-1">Welcome back</h2>
+            <p class="text-white/50 text-sm mb-6">Sign in to your account to continue</p>
+
+            @if($errors->any())
+            <div class="mb-4 px-4 py-3 rounded-xl bg-red-500/20 border border-red-500/30 text-red-200 text-sm">
+                {{ $errors->first() }}
+            </div>
+            @endif
+
+            @if(session('success'))
+            <div class="mb-4 px-4 py-3 rounded-xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-200 text-sm">
+                {{ session('success') }}
+            </div>
+            @endif
+
+            <form action="{{ route('login') }}" method="POST" class="space-y-4">
+                @csrf
+
+                <div>
+                    <label class="block text-white/60 text-xs font-semibold mb-1.5 uppercase tracking-wider">Email Address</label>
+                    <input type="email" name="email" value="{{ old('email') }}" required autocomplete="email"
+                        class="form-input" placeholder="your@email.com">
+                </div>
+
+                <div>
+                    <label class="block text-white/60 text-xs font-semibold mb-1.5 uppercase tracking-wider">Password</label>
+                    <input type="password" name="password" required autocomplete="current-password"
+                        class="form-input" placeholder="••••••••">
+                </div>
+
+                <div class="flex items-center justify-between pt-1">
+                    <label class="flex items-center gap-2 text-white/60 text-sm cursor-pointer">
+                        <input type="checkbox" name="remember" class="rounded border-white/20 bg-white/10 text-yellow-400 focus:ring-yellow-400">
+                        Remember me
+                    </label>
+                    <a href="#" class="text-yellow-400 text-sm hover:text-yellow-300 transition-colors">Forgot password?</a>
+                </div>
+
+                <button type="submit" class="btn-login mt-2">
+                    Sign In to DormíPro
+                </button>
+            </form>
+        </div>
+
+        <p class="text-center text-white/30 text-xs mt-6">
+            © {{ date('Y') }} DormíPro — Dormitory Management System. All rights reserved.
+        </p>
     </div>
-</div>
-<script>
-function togglePass(){
-    const i=document.getElementById('pass-input');
-    const t=document.getElementById('pass-toggle').querySelector('i');
-    if(i.type==='password'){i.type='text';t.className='fa-solid fa-eye-slash';}
-    else{i.type='password';t.className='fa-solid fa-eye';}
-}
-</script>
 </body>
 </html>
